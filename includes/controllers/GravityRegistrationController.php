@@ -11,6 +11,7 @@ add_action('init', function () {
 
     // Gravity Forms ešte nemusí byť načítaný
     if (!class_exists('GFForms')) {
+        $schedule_id = (int) rgar($entry, '28');
         return;
     }
 
@@ -24,10 +25,13 @@ function spa_handle_registration_form($entry, $form) {
         return;
     }
 
-    $result = SPA_Registration_Service::create([
-        'parent_id'  => 1,
-        'child_id'   => 1,
-        'program_id' => 1,
-    ]);
+    $schedule_id = (int) rgar($entry, '28');
 
+    $result = SPA_Registration_Service::create([
+        'parent_id'   => 1,
+        'child_id'    => 1,
+        'program_id'  => 1,
+        'schedule_id' => $schedule_id,
+    ]);
 }
+
