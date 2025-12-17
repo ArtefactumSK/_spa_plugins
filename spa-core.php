@@ -31,6 +31,7 @@ require_once __DIR__ . '/includes/taxonomies/tax-city.php';
 require_once __DIR__ . '/includes/taxonomies/tax-city.php';
 // CPT
 require_once __DIR__ . '/includes/cpt/cpt-venue.php';
+require_once __DIR__ . '/includes/frontend/schedules-shortcode.php';
 
 
 register_activation_hook(__FILE__, function () {
