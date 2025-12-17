@@ -42,3 +42,4 @@ $registrations = $wpdb->get_results(
 
     <button type="submit">Uložiť dochádzku</button>
 </form>
+
