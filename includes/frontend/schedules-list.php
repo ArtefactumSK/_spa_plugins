@@ -83,18 +83,20 @@ foreach ($schedules as $schedule) {
     $available = ($capacity > 0) ? max(0, $capacity - $registered) : '—';
 
     echo '<li style="margin-bottom:12px;padding:12px;border:1px solid #ddd;">';
-    $current_url = esc_url_raw($_SERVER['REQUEST_URI']);
-        $link = add_query_arg(
-            'schedule_id',
-            (int) $schedule_id,
-            $current_url
-        );
+   $current_url = esc_url_raw($_SERVER['REQUEST_URI']);
 
-        echo '<strong>
-            <a href="' . esc_url($link) . '">
-                ' . esc_html($schedule->post_title) . '
-            </a>
-        </strong><br>';
+    $registration_url = add_query_arg([
+        'schedule_id' => (int) $schedule_id,
+        'program_id'  => (int) $program_id,
+        'venue_id'    => (int) $venue_id,
+    ], site_url('/register/')); // ← stránka s GF formulárom
+
+    echo '<strong>
+        <a href="' . esc_url($registration_url) . '">
+            ' . esc_html($schedule->post_title) . '
+        </a>
+    </strong><br>';
+
 
         if (isset($_GET['schedule_id'])) {
         echo '<pre>Vybraný rozvrh ID: ' . intval($_GET['schedule_id']) . '</pre>';

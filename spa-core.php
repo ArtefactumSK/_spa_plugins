@@ -32,6 +32,7 @@ require_once __DIR__ . '/includes/taxonomies/tax-city.php';
 // CPT
 require_once __DIR__ . '/includes/cpt/cpt-venue.php';
 require_once __DIR__ . '/includes/frontend/schedules-shortcode.php';
+require_once __DIR__ . '/includes/frontend/child-selector-shortcode.php';
 
 
 register_activation_hook(__FILE__, function () {
@@ -50,4 +51,14 @@ add_action('after_setup_theme', function () {
     ) {
         show_admin_bar(false);
     }
+});
+
+add_action('wp_enqueue_scripts', function () {
+    wp_enqueue_script(
+        'spa-registration',
+        plugin_dir_url(__FILE__) . 'assets/js/registration.js',
+        [],
+        '1.0',
+        true
+    );
 });
