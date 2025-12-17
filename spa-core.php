@@ -17,5 +17,7 @@ require_once __DIR__ . '/includes/services/RegistrationService.php';
 if (!class_exists('SPA_Registration_Service')) {
     error_log('[SPA CORE] RegistrationService class NOT loaded');
 }
+require_once __DIR__ . '/includes/controllers/GravityRegistrationController.php';
+
 
 register_activation_hook(__FILE__, 'spa_core_install_db');
