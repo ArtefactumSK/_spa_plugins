@@ -42,17 +42,18 @@ class SPA_Registration_Service {
 
         $table = $wpdb->prefix . 'spa_registrations';
 
+        $schedule_id = isset($data['schedule_id']) ? (int) $data['schedule_id'] : null;
         /* ==========================
            1. ZÁPIS DO DB
            ========================== */
-
+        
         $result = $wpdb->insert(
             $table,
             [
                 'parent_id'  => (int) $data['parent_id'],
                 'child_id'   => (int) $data['child_id'],
                 'program_id'=> (int) $data['program_id'],
-                'schedule_id' => $schedule_id,
+                'schedule_id' => $args['schedule_id'] ?? null,
                 'status'     => $data['status'] ?? 'pending',
                 'created_at' => current_time('mysql'),
             ],
