@@ -26,7 +26,8 @@ if (!$city_slug) {
 }
 
 // získa term ID mesta
-$city = get_term_by('slug', $city_slug, 'spa_city');
+$city = get_term_by('slug', $city_slug, 'spa_place');
+
 
 if (!$city) {
     echo '<p>Mesto neexistuje.</p>';
@@ -40,7 +41,7 @@ $schedules = get_posts([
     'numberposts' => -1,
     'tax_query' => [
         [
-            'taxonomy' => 'spa_city',
+            'taxonomy' => 'spa_place',
             'field'    => 'term_id',
             'terms'    => $city->term_id,
         ]

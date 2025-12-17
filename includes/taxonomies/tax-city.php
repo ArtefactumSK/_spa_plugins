@@ -12,11 +12,12 @@
  */
 
 if (!defined('ABSPATH')) exit;
+error_log('[SPA] tax-city.php LOADED');
 
 add_action('init', function () {
 
     register_taxonomy(
-        'spa_city',
+        'spa_place',
         ['spa_program', 'spa_schedule'],
         [
             'label'             => 'Mestá',
