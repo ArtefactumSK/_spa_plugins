@@ -2,10 +2,13 @@
 /**
  * SPA Core – Registration Service
  *
- * Zodpovedá výhradne za prácu s DB tabuľkami
- * týkajúcimi sa registrácií.
+ * Zodpovedá za:
+ * - zápis registrácie do DB (spa_registrations)
+ * - vytvorenie CPT spa_registration ako vizuálnej reprezentácie
+ *
+ * DB = zdroj pravdy
+ * CPT = UI vrstva
  */
-
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,7 +17,10 @@ if (!defined('ABSPATH')) {
 class SPA_Registration_Service {
 
     /**
-     * Vytvorí registráciu v DB
+     * Vytvorí registráciu:
+     * 1. zapíše dáta do DB
+     * 2. vytvorí CPT spa_registration
+     * 3. prepojí CPT ↔ DB cez post_meta
      *
      * @param array $data
      * @return int|\WP_Error
@@ -23,11 +29,7 @@ class SPA_Registration_Service {
         global $wpdb;
 
         // Povinné polia
-        $required = [
-            'parent_id',
-            'child_id',
-            'program_id',
-        ];
+        $required = ['parent_id', 'child_id', 'program_id'];
 
         foreach ($required as $key) {
             if (empty($data[$key])) {
@@ -40,6 +42,10 @@ class SPA_Registration_Service {
 
         $table = $wpdb->prefix . 'spa_registrations';
 
+        /* ==========================
+           1. ZÁPIS DO DB
+           ========================== */
+
         $result = $wpdb->insert(
             $table,
             [
@@ -49,13 +55,7 @@ class SPA_Registration_Service {
                 'status'     => $data['status'] ?? 'pending',
                 'created_at' => current_time('mysql'),
             ],
-            [
-                '%d',
-                '%d',
-                '%d',
-                '%s',
-                '%s',
-            ]
+            ['%d', '%d', '%d', '%s', '%s']
         );
 
         if ($result === false) {
@@ -65,6 +65,31 @@ class SPA_Registration_Service {
             );
         }
 
-        return (int) $wpdb->insert_id;
+        $registration_id = (int) $wpdb->insert_id;
+
+        /* ==========================
+           2. VYTVORENIE CPT
+           ========================== */
+
+        $post_id = wp_insert_post([
+            'post_type'   => 'spa_registration',
+            'post_title'  => 'Registrácia #' . $registration_id,
+            'post_status' => 'publish',
+        ]);
+
+        if (!is_wp_error($post_id)) {
+            // prepojenie CPT → DB
+            update_post_meta(
+                $post_id,
+                '_spa_registration_id',
+                $registration_id
+            );
+        }
+
+        /* ==========================
+           3. VÝSLEDOK
+           ========================== */
+
+        return $registration_id;
     }
 }
