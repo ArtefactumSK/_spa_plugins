@@ -22,8 +22,11 @@ require_once __DIR__ . '/includes/controllers/GravityChildController.php';
 require_once __DIR__ . '/includes/controllers/AttendanceController.php';
 
 // === Frontend (shortcodes, view logic) ===
+require_once __DIR__ . '/includes/frontend/feature-lock.php';
 require_once __DIR__ . '/includes/frontend/registrations-list.php';
-
+require_once __DIR__ . '/includes/frontend/attendance-shortcode.php';
+require_once __DIR__ . '/includes/frontend/shortcodes.php';
+require_once __DIR__ . '/includes/frontend/feature-lock.php';
 
 require_once __DIR__ . '/includes/services/RegistrationService.php';
 if (!class_exists('SPA_Registration_Service')) {
@@ -31,10 +34,8 @@ if (!class_exists('SPA_Registration_Service')) {
 }
 
 require_once __DIR__ . '/includes/roles/roles.php';
-require_once __DIR__ . '/includes/frontend/registrations-list.php';
-require_once __DIR__ . '/includes/frontend/attendance-shortcode.php';
-require_once __DIR__ . '/includes/frontend/shortcodes.php';
-require_once __DIR__ . '/includes/frontend/feature-lock.php';
+
+
 
 require_once __DIR__ . '/includes/cpt/cpt-schedule.php';
 require_once __DIR__ . '/includes/services/AttendanceService.php';
