@@ -58,11 +58,13 @@ require_once __DIR__ . '/includes/frontend/schedules-shortcode.php';
 require_once __DIR__ . '/includes/frontend/child-selector-shortcode.php';
 
 
-register_activation_hook(__FILE__, function () {
+/* register_activation_hook(__FILE__, function () {
     spa_core_install_db();
     spa_core_register_roles();
     register_activation_hook(__FILE__, 'spa_init_feature_flags');
-});
+}); */
+
+spa_init_feature_flags();
 
 add_action('after_setup_theme', function () {
     if (!is_user_logged_in()) return;
