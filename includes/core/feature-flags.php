@@ -10,18 +10,18 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Inicializácia feature flags (iba ak neexistujú)
+ * Inicializácia feature flags (iba ak neexistujú alebo expirovali)
  */
 function spa_init_feature_flags() {
 
     $existing = get_option('spa_features');
+    
+    // Ak existuje a trial NIE JE expirovaný → vrať bez zmeny
     if ($existing && !empty($existing['trial_ends_at']) && current_time('Y-m-d') <= $existing['trial_ends_at']) {
         return;
     }
 
-    // Inak vždy regeneruj
-    delete_option('spa_features');
-
+    // INAK: vytvor nový option (NEMAZAJ!)
     $trial_start = current_time('Y-m-d');
     $trial_end   = date('Y-m-d', strtotime('+30 days'));
 
@@ -40,14 +40,13 @@ function spa_init_feature_flags() {
         ]
     ];
 
-    // ✅ OPRAVA: Vynúť uloženie do DB (nie len do cache)
-    add_option('spa_features', $features, '', 'yes');
-    
-    // Očisti cache aby sa nové dáta čítali
-    wp_cache_delete('spa_features');
-    
-    error_log('[SPA INIT] Option stored to DB with add_option');
-    error_log('[SPA INIT] Stored value: ' . json_encode($features, JSON_PRETTY_PRINT));
+    // Ak neexistuje → vlož
+    if (!$existing) {
+        add_option('spa_features', $features, '', 'yes');
+    } else {
+        // Ak expiroval → aktualizuj
+        update_option('spa_features', $features);
+    }
 }
 
 
