@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/db/install.php';
 
 // Services
+require_once __DIR__ . '/includes/core/feature-flags.php';
+
 require_once __DIR__ . '/includes/services/RegistrationService.php';
 if (!class_exists('SPA_Registration_Service')) {
     error_log('[SPA CORE] RegistrationService class NOT loaded');
