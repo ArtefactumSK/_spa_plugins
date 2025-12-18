@@ -27,7 +27,8 @@ function spa_init_feature_flags() {
         'trial_ends_at'    => $trial_end,
 
         'features' => [
-            'attendance_stats'         => 'extended',
+            'attendance_stats' => false,
+
             'payments_extended'        => 'extended',
             'messaging_extended'       => 'extended',
             'coach_dashboard_extended' => 'extended',
