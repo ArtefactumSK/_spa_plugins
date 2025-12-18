@@ -27,8 +27,7 @@ function spa_init_feature_flags() {
         'trial_ends_at'    => $trial_end,
 
         'features' => [
-            'attendance_stats' => false,
-
+            'attendance_stats'         => false,
             'payments_extended'        => 'extended',
             'messaging_extended'       => 'extended',
             'coach_dashboard_extended' => 'extended',
@@ -51,23 +50,56 @@ function spa_feature_enabled(string $feature_key): bool {
 
     $options = get_option('spa_features');
 
-    if (!$options || empty($options['features'][$feature_key])) {
+    // Ak options neexistujú → default false
+    if (!$options || empty($options['features'])) {
         return false;
     }
 
-    if ($options['features'][$feature_key] !== 'extended') {
+    // Ak kľúč neexistuje → default false
+    if (!isset($options['features'][$feature_key])) {
+        return false;
+    }
+
+    $feature_value = $options['features'][$feature_key];
+
+    // EXPLICITNE FALSE alebo 0 → VRAŤ FALSE
+    if ($feature_value === false || $feature_value === 0 || $feature_value === '0') {
+        return false;
+    }
+
+    // Prázdne hodnoty → FALSE
+    if (empty($feature_value)) {
+        return false;
+    }
+
+    // Hodnota 'trial' → Skontroluj trial status
+    if ($feature_value === 'trial') {
+        if (empty($options['trial_active'])) {
+            return false;
+        }
+
+        $today = current_time('Y-m-d');
+        if (!empty($options['trial_ends_at']) && $today > $options['trial_ends_at']) {
+            return false;
+        }
+
         return true;
     }
 
-    if (empty($options['trial_active'])) {
-        return false;
+    // Hodnota 'extended' → Skontroluj trial status
+    if ($feature_value === 'extended') {
+        if (empty($options['trial_active'])) {
+            return false;
+        }
+
+        $today = current_time('Y-m-d');
+        if (!empty($options['trial_ends_at']) && $today > $options['trial_ends_at']) {
+            return false;
+        }
+
+        return true;
     }
 
-    $today = current_time('Y-m-d');
-
-    if (!empty($options['trial_ends_at']) && $today > $options['trial_ends_at']) {
-        return false;
-    }
-
-    return true;
+    // Iné truthy hodnoty → TRUE
+    return (bool) $feature_value;
 }
