@@ -8,6 +8,11 @@ if (!defined('ABSPATH')) exit;
 add_shortcode('spa_registrations', function () {
 
     $query = spa_get_registrations_for_current_user();
+        spa_feature_lock_notice(
+        'reports_extended',
+        'Test: Rozšírené reporty (len overenie mechanizmu)'
+        );
+
 
     if (empty($query) || !$query->have_posts()) {
         return '<p>Žiadne registrácie.</p>';
