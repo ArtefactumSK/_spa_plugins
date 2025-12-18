@@ -22,12 +22,16 @@ function spa_init_feature_flags() {
     $trial_end   = date('Y-m-d', strtotime('+30 days'));
 
     $features = [
-        'trial_active'     => true,
+        /* 'trial_active'     => true,
         'trial_started_at' => $trial_start,
-        'trial_ends_at'    => $trial_end,
+        'trial_ends_at'    => $trial_end, */
+        'trial_active'     => true,
+        'trial_started_at' => '2025-01-10',
+        'trial_ends_at'    => '2025-01-25',
+
 
         'features' => [
-            'attendance_stats'         => false,
+            'attendance_stats'         => 'trial',
             'payments_extended'        => 'extended',
             'messaging_extended'       => 'extended',
             'coach_dashboard_extended' => 'extended',

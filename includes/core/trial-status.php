@@ -12,22 +12,24 @@ function spa_get_trial_status(): array {
 
     $options = get_option('spa_features');
 
-    $is_active = false;
+    $today = current_time('Y-m-d');
+
+    // Default
+    $status  = 'core';
     $expires = null;
 
-    if ($options && !empty($options['trial_active'])) {
-        $today = current_time('Y-m-d');
-        
-        // Ak existuje trial_ends_at a ešte je platný
-        if (!empty($options['trial_ends_at'])) {
-            $is_active = ($today <= $options['trial_ends_at']);
-            $expires = $options['trial_ends_at'];
+    // Ak je trial definovaný
+    if (!empty($options['trial_active']) && !empty($options['trial_ends_at'])) {
+
+        $expires = $options['trial_ends_at'];
+
+        if ($today <= $options['trial_ends_at']) {
+            $status = 'trial';
         }
     }
 
     return [
-        'enabled' => (bool) (!empty($options['trial_active'])),
-        'active'  => $is_active,
+        'status'  => $status,   // core | trial | extended (extended rieši feature flag)
         'expires' => $expires,
     ];
 }
