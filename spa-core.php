@@ -68,3 +68,7 @@ add_action('wp_enqueue_scripts', function () {
         true
     );
 });
+
+add_action('init', function () {
+    error_log('FEATURE attendance_stats: ' . (spa_feature_enabled('attendance_stats') ? 'ON' : 'OFF'));
+});
