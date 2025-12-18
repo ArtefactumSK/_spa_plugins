@@ -11,7 +11,6 @@ add_action('init', function () {
 
     // Gravity Forms ešte nemusí byť načítaný
     if (!class_exists('GFForms')) {
-        $schedule_id = (int) rgar($entry, '28');
         return;
     }
 
@@ -45,4 +44,3 @@ function spa_handle_registration_form($entry, $form) {
         error_log('[SPA] created registration_id=' . (int) $result);
     }
 }
-

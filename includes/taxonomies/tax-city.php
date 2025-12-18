@@ -12,7 +12,6 @@
  */
 
 if (!defined('ABSPATH')) exit;
-error_log('[SPA] tax-city.php LOADED');
 
 add_action('init', function () {
 
