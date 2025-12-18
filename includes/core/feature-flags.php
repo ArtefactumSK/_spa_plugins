@@ -42,46 +42,33 @@ function spa_init_feature_flags() {
 add_action('after_switch_theme', 'spa_init_feature_flags');
 add_action('activated_plugin', 'spa_init_feature_flags');
 
-
 /**
- * SPA Feature Flags & Trial logic
+ * Overí, či je rozšírená funkcionalita dostupná
  *
- * Riadi CORE vs EXTENDED vrstvy funkcionality
- *
- * @package SPA Core
+ * @param string $feature_key
+ * @return bool
  */
+function spa_feature_enabled(string $feature_key): bool {
 
-if (!defined('ABSPATH')) exit;
+    $options = get_option('spa_features');
 
-/**
- * Inicializácia feature flags (iba ak neexistujú)
- */
-function spa_init_feature_flags() {
-
-    if (get_option('spa_features')) {
-        return;
+    if (!$options || empty($options['features'][$feature_key])) {
+        return false;
     }
 
-    $trial_start = current_time('Y-m-d');
-    $trial_end   = date('Y-m-d', strtotime('+30 days'));
+    if ($options['features'][$feature_key] !== 'extended') {
+        return true;
+    }
 
-    $features = [
-        'trial_active'     => true,
-        'trial_started_at' => $trial_start,
-        'trial_ends_at'    => $trial_end,
+    if (empty($options['trial_active'])) {
+        return false;
+    }
 
-        'features' => [
-            'attendance_stats'         => 'extended',
-            'payments_extended'        => 'extended',
-            'messaging_extended'       => 'extended',
-            'coach_dashboard_extended' => 'extended',
-            'reports_extended'         => 'extended',
-            'gps_verification'         => 'extended',
-        ]
-    ];
+    $today = current_time('Y-m-d');
 
-    add_option('spa_features', $features);
+    if (!empty($options['trial_ends_at']) && $today > $options['trial_ends_at']) {
+        return false;
+    }
+
+    return true;
 }
-
-add_action('after_switch_theme', 'spa_init_feature_flags');
-add_action('activated_plugin', 'spa_init_feature_flags');
