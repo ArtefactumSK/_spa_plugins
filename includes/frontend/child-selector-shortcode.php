@@ -2,7 +2,7 @@
 /**
  * Shortcode: SPA Child Selector
  *
- * Zobrazuje výber dieťaťa pre prihláseného rodiča
+ * Zobrazuje výber dieťaťa pre prihláseného rodiča alebo trénera
  *
  * Použitie:
  * [spa_child_selector]
@@ -33,7 +33,7 @@ add_shortcode('spa_child_selector', function () {
         $children = $wpdb->get_results(
             "SELECT c.id, c.name, c.birthdate, u.user_email as parent_email
             FROM {$table} c
-            LEFT JOIN {$wpdb->prefix}users u ON c.parent_id = u.ID
+            LEFT JOIN {$wpdb->users} u ON c.parent_id = u.ID
             ORDER BY c.name"
         );
         
