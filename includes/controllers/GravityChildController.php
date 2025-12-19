@@ -37,10 +37,19 @@ add_action('gform_after_submission', function ($entry, $form) {
         return;
     }
 
-    // Konvertuj dátum z dd.mm.yyyy na yyyy-mm-dd
+    // GF vracia dátum vo formáte YYYY-MM-DD (už je správny)
     $birthdate = null;
-    if ($birthdate_raw && preg_match('/(\d{2})\.(\d{2})\.(\d{4})/', $birthdate_raw, $matches)) {
-        $birthdate = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+    if ($birthdate_raw) {
+        // Ak je vo formáte YYYY-MM-DD → použiť priamo
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate_raw)) {
+            $birthdate = $birthdate_raw;
+        }
+        // Ak je vo formáte dd.mm.yyyy → konvertovať
+        elseif (preg_match('/(\d{2})\.(\d{2})\.(\d{4})/', $birthdate_raw, $matches)) {
+            $birthdate = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+        }
+        
+        error_log('[SPA CHILD] Birthdate raw: ' . $birthdate_raw . ' → converted: ' . $birthdate);
     }
 
     // Vlož dieťa do DB

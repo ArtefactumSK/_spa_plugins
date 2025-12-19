@@ -24,22 +24,31 @@ add_shortcode('spa_child_selector', function () {
     global $wpdb;
     $table = $wpdb->prefix . 'spa_children';
 
-    // DEBUG: Over, aký user je prihlásený a aké deti existujú
-    error_log('[SPA CHILD SELECTOR] Current user ID: ' . $parent_id);
-    error_log('[SPA CHILD SELECTOR] User roles: ' . implode(', ', $current_user->roles));
-    
-    // Najprv over všetky deti v DB
-    $all_children = $wpdb->get_results("SELECT id, parent_id, name FROM {$table} ORDER BY id DESC LIMIT 10");
-    error_log('[SPA CHILD SELECTOR] All children in DB: ' . print_r($all_children, true));
+    // Ak je tréner/manager/owner/admin → zobraz VŠETKY deti
+    $privileged_roles = ['spa_trainer', 'spa_manager', 'spa_owner', 'administrator'];
+    $is_privileged = !empty(array_intersect($privileged_roles, (array) $current_user->roles));
 
-    $children = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT id, name FROM $table WHERE parent_id = %d ORDER BY name",
-            $parent_id
-        )
-    );
-    
-    error_log('[SPA CHILD SELECTOR] Children for parent_id=' . $parent_id . ': ' . count($children));
+    if ($is_privileged) {
+        // Tréner vidí všetky deti
+        $children = $wpdb->get_results(
+            "SELECT c.id, c.name, c.birthdate, u.user_email as parent_email
+            FROM {$table} c
+            LEFT JOIN {$wpdb->prefix}users u ON c.parent_id = u.ID
+            ORDER BY c.name"
+        );
+        
+        error_log('[SPA CHILD SELECTOR] Privileged user (roles: ' . implode(', ', $current_user->roles) . ') → showing ALL children: ' . count($children));
+    } else {
+        // Rodič vidí len svoje deti
+        $children = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, name, birthdate FROM {$table} WHERE parent_id = %d ORDER BY name",
+                $parent_id
+            )
+        );
+        
+        error_log('[SPA CHILD SELECTOR] Parent user ID=' . $parent_id . ' → showing OWN children: ' . count($children));
+    }
 
     if (!$children) {
         return '<p>Zatiaľ nemáte pridané žiadne dieťa.</p>';
@@ -51,11 +60,21 @@ add_shortcode('spa_child_selector', function () {
     echo '<div class="spa-children">';
 
     foreach ($children as $child) {
+        // Zostaviť info text
+        $info_parts = [];
+        if (!empty($child->birthdate)) {
+            $info_parts[] = '🎂 ' . date('d.m.Y', strtotime($child->birthdate));
+        }
+        if ($is_privileged && !empty($child->parent_email)) {
+            $info_parts[] = '👤 ' . $child->parent_email;
+        }
+        $info_text = !empty($info_parts) ? '<br><small>' . implode(' | ', $info_parts) . '</small>' : '';
+
         echo '<button type="button"
             class="spa-child-btn"
             data-child-id="' . esc_attr($child->id) . '"
             data-parent-id="' . esc_attr($parent_id) . '">
-            ' . esc_html($child->name) . '
+            ' . esc_html($child->name) . $info_text . '
         </button>';
     }
 
