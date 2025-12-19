@@ -10,8 +10,9 @@
 if (!defined('ABSPATH')) exit;
 
 add_action('gform_after_submission', function ($entry, $form) {
+    global $wpdb;
 
-    // ← ID FORMULÁRA REGISTRÁCIA DIEŤAŤA
+    // ID formulára – registrácia dieťaťa
     if ((int) $form['id'] !== 4) {
         return;
     }
@@ -20,28 +21,35 @@ add_action('gform_after_submission', function ($entry, $form) {
         return;
     }
 
-    $parent_id = get_current_user_id();
+    $parent_id  = get_current_user_id();
     $first_name = rgar($entry, '1.3');
     $last_name  = rgar($entry, '1.6');
 
     $child_name = trim($first_name . ' ' . $last_name);
 
-
     if (!$child_name) {
         return;
     }
 
-    $child_id = wp_insert_post([
-        'post_type'   => 'spa_child',
-        'post_title'  => sanitize_text_field($child_name),
-        'post_status' => 'publish',
-    ]);
+    $table = $wpdb->get_blog_prefix(5) . 'spa_children';
 
-    if (is_wp_error($child_id)) {
+    $result = $wpdb->insert(
+        $table,
+        [
+            'parent_id'  => (int) $parent_id,
+            'name'       => sanitize_text_field($child_name),
+            'created_at' => current_time('mysql'),
+        ],
+        ['%d', '%s', '%s']
+    );
+
+    if (!$result) {
+        error_log('[SPA CHILD] DB insert failed: ' . $wpdb->last_error);
         return;
     }
 
-    // Väzba dieťa → rodič
-    update_post_meta($child_id, '_spa_parent_id', $parent_id);
+    $child_id = $wpdb->insert_id;
 
-}, 10, 2);
+    error_log('[SPA CHILD] Created child_id=' . $child_id);
+
+}, 10, 2); // ⬅️ KRITICKÝ RIADOK
