@@ -75,7 +75,14 @@ add_action('after_setup_theme', function () {
 
 // Test users (len pre adminov)
 if (is_admin()) {
-    require_once __DIR__ . '/includes/admin/create-test-users.php';
+    $test_file = __DIR__ . '/includes/admin/create-test-users.php';
+    
+    if (file_exists($test_file)) {
+        error_log('[SPA DEBUG] Test users file exists: ' . $test_file);
+        require_once $test_file;
+    } else {
+        error_log('[SPA DEBUG] Test users file NOT FOUND: ' . $test_file);
+    }
 }
 
 add_action('wp_enqueue_scripts', function () {
