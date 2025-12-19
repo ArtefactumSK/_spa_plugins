@@ -73,14 +73,18 @@ add_action('after_setup_theme', function () {
     }
 });
 
+// Test users (len pre adminov)
+if (is_admin()) {
+    require_once __DIR__ . '/includes/admin/create-test-users.php';
+}
+
 add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_script(
-        'spa-registration',
-        plugin_dir_url(__FILE__) . 'assets/js/registration.js',
-        [],
-        '1.0',
-        true
-    );
+    // JS
+    wp_enqueue_script('spa-registration', plugin_dir_url(__FILE__) . 'assets/js/registration.js', [], '1.0', true);
+    wp_enqueue_script('spa-child-selector', plugin_dir_url(__FILE__) . 'assets/js/child-selector.js', [], '1.1', true);
+
+    // CSS (NOVÝ)
+    wp_enqueue_style('spa-child-selector', plugin_dir_url(__FILE__) . 'assets/css/child-selector.css', [], '1.0');
 });
 
 add_action('init', function () {

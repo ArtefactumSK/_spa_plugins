@@ -23,6 +23,7 @@ function spa_core_get_schema_sql() {
         PRIMARY KEY (id),
         UNIQUE KEY user_id (user_id)
     ) $charset_collate;
+
     CREATE TABLE {$prefix}spa_children (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         parent_id BIGINT UNSIGNED NOT NULL,
@@ -32,6 +33,7 @@ function spa_core_get_schema_sql() {
         PRIMARY KEY (id),
         KEY parent_id (parent_id)
     ) $charset_collate;
+
     CREATE TABLE {$prefix}spa_programs (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(191) NOT NULL,
@@ -39,20 +41,23 @@ function spa_core_get_schema_sql() {
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;
+
     CREATE TABLE {$prefix}spa_registrations (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         parent_id BIGINT UNSIGNED NOT NULL,
         child_id BIGINT UNSIGNED NOT NULL,
         program_id BIGINT UNSIGNED NOT NULL,
+        schedule_id BIGINT UNSIGNED NULL,
         status VARCHAR(50) NOT NULL DEFAULT 'pending',
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id),
         KEY parent_id (parent_id),
         KEY child_id (child_id),
-        KEY program_id (program_id)
-    ) $charset_collate;";
+        KEY program_id (program_id),
+        KEY schedule_id (schedule_id)
+    ) $charset_collate;
 
-    $sql .= "CREATE TABLE {$prefix}spa_children_meta (
+    CREATE TABLE {$prefix}spa_children_meta (
         meta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         child_id BIGINT UNSIGNED NOT NULL,
         meta_key VARCHAR(191) NOT NULL,
@@ -70,6 +75,20 @@ function spa_core_get_schema_sql() {
         PRIMARY KEY (meta_id),
         KEY registration_id (registration_id),
         KEY meta_key (meta_key)
+    ) $charset_collate;
+
+    CREATE TABLE {$prefix}spa_attendance (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        schedule_id BIGINT UNSIGNED NOT NULL,
+        registration_id BIGINT UNSIGNED NOT NULL,
+        attendance_date DATE NOT NULL,
+        attended TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY unique_attendance (schedule_id, registration_id, attendance_date),
+        KEY schedule_id (schedule_id),
+        KEY registration_id (registration_id)
     ) $charset_collate;";
 
     return $sql;
