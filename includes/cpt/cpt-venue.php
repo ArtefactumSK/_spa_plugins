@@ -27,7 +27,7 @@ add_action('init', function () {
         'public'              => true,
         'show_ui'             => true,
         'show_in_menu'        => true,
-        'show_in_rest'        => true,
+        'show_in_rest'        => false,  // ← VYPNUTÝ Gutenberg (používa Classic Editor)
         'supports'            => ['title', 'editor', 'thumbnail'],
         'capability_type'     => 'post',
         'menu_icon'           => 'dashicons-location',

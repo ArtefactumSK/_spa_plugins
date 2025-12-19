@@ -14,7 +14,7 @@ add_action('init', function () {
 
     register_post_type('spa_program', [
         'labels' => [
-            'name'               => 'Programy',
+            'name'               => 'SPA Programy',
             'singular_name'      => 'Program',
             'add_new'            => 'Pridať program',
             'add_new_item'       => 'Pridať nový program',
@@ -27,7 +27,7 @@ add_action('init', function () {
         'public'              => true,
         'show_ui'             => true,
         'show_in_menu'        => true,
-        'show_in_rest'        => true,
+        'show_in_rest'        => false,  // ← Classic Editor
         'supports'            => ['title', 'editor', 'thumbnail', 'excerpt'],
         'taxonomies'          => ['spa_category', 'post_tag'],
         'capability_type'     => 'post',
@@ -81,6 +81,15 @@ add_action('add_meta_boxes', function () {
         'spa_program',
         'normal',
         'high'
+    );
+
+    add_meta_box(
+        'spa_program_stats',
+        'Štatistiky',
+        'spa_program_stats_meta_box',
+        'spa_program',
+        'side',
+        'default'
     );
 
 });
@@ -225,6 +234,35 @@ function spa_program_schedule_meta_box($post) {
         });
     });
     </script>
+    <?php
+}
+
+// Meta box: Štatistiky
+function spa_program_stats_meta_box($post) {
+    global $wpdb;
+
+    // Počet registrácií na tento program
+    $registrations_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}spa_registrations WHERE program_id = %d",
+        $post->ID
+    ));
+
+    // Počet vygenerovaných schedules
+    $schedules_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'spa_schedule' AND post_parent = %d",
+        $post->ID
+    ));
+
+    ?>
+    <table class="form-table" style="margin: 0;">
+        <tr>
+            <td style="padding: 0;">
+                <p><strong>Registrácie:</strong> <?php echo $registrations_count; ?></p>
+                <p><strong>Vygenerované rozvrhy:</strong> <?php echo $schedules_count; ?></p>
+                <p><strong>Kapacita:</strong> <?php echo get_post_meta($post->ID, '_spa_capacity', true) ?: '∞'; ?></p>
+            </td>
+        </tr>
+    </table>
     <?php
 }
 
