@@ -1,7 +1,7 @@
 <?php
 /**
- * SPA System MAIN Core
- * Centrálna logika pre spracovanie registračných dát MAIN
+ * SPA System Core
+ * Centrálna logika pre spracovanie registračných dát
  */
 
 if (!defined('ABSPATH')) {
@@ -27,27 +27,27 @@ function spa_create_registration_object($entry) {
     ];
     
     // Program a variant
-    $registration['program'] = spa_get_field_value($entry, 'program');
-    $registration['variant'] = spa_get_field_value($entry, 'variant');
+    $registration['program'] = spa_get_field_value($entry, 'spa_program');
+    $registration['variant'] = spa_get_field_value($entry, 'spa_variant');
     
     // Kontaktné údaje
-    $registration['client_email'] = spa_get_field_value($entry, 'client_email');
-    $registration['client_phone'] = spa_get_field_value($entry, 'client_phone');
+    $registration['client_email'] = spa_get_field_value($entry, 'spa_client_email');
+    $registration['client_phone'] = spa_get_field_value($entry, 'spa_client_phone');
     
     // Adresa (GF Address field vracia array)
-    $address_raw = spa_get_field_value($entry, 'client_address');
+    $address_raw = spa_get_field_value($entry, 'spa_client_address');
     if (is_array($address_raw)) {
         $registration['client_address'] = $address_raw;
     }
     
     // Súhlasy
     $consent_fields = [
-        'consent_gdpr',
-        'consent_health',
-        'consent_statutes',
-        'consent_terms',
-        'consent_guardian',
-        'consent_marketing',
+        'spa_consent_gdpr',
+        'spa_consent_health',
+        'spa_consent_statutes',
+        'spa_consent_terms',
+        'spa_consent_guardian',
+        'spa_consent_marketing',
     ];
     
     foreach ($consent_fields as $consent) {
@@ -98,10 +98,10 @@ function spa_validate_registration($registration) {
     
     // Kontrola povinných súhlasov
     $required_consents = [
-        'consent_gdpr' => 'GDPR súhlas je povinný.',
-        'consent_health' => 'Zdravotný súhlas je povinný.',
-        'consent_statutes' => 'Súhlas so stanovami je povinný.',
-        'consent_terms' => 'Súhlas s podmienkami je povinný.',
+        'spa_consent_gdpr' => 'GDPR súhlas je povinný.',
+        'spa_consent_health' => 'Zdravotný súhlas je povinný.',
+        'spa_consent_statutes' => 'Súhlas so stanovami je povinný.',
+        'spa_consent_terms' => 'Súhlas s podmienkami je povinný.',
     ];
     
     foreach ($required_consents as $consent => $error_message) {
@@ -287,122 +287,54 @@ function spa_get_programs_for_city_dynamic($city_name) {
 }
 
 /**
- * Helper: Získanie programov pre dané mesto (DYNAMICKY z CPT)
- * Vracia programy s vekom a typom účastníka
- */
-function spa_get_programs_for_city_dynamic($city_name) {
-    global $wpdb;
-    
-    // KROK 1: Nájdi spa_place pre dané mesto
-    $place_sql = $wpdb->prepare("
-        SELECT p.ID
-        FROM {$wpdb->posts} p
-        INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-        WHERE p.post_type = 'spa_place'
-        AND p.post_status = 'publish'
-        AND pm.meta_key = 'spa_place_city'
-        AND pm.meta_value = %s
-        LIMIT 1
-    ", $city_name);
-    
-    $place_id = $wpdb->get_var($place_sql);
-    
-    // KROK 2: Ak spa_place má definované programy v postmeta
-    $program_slugs = [];
-    if ($place_id) {
-        $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
-        if (!empty($programs_meta) && is_array($programs_meta)) {
-            $program_slugs = $programs_meta;
-        }
-    }
-    
-    // KROK 3: Načítaj spa_group programy
-    $args = [
-        'post_type' => 'spa_group',
-        'post_status' => 'publish',
-        'posts_per_page' => -1,
-        'orderby' => 'title',
-        'order' => 'ASC',
-    ];
-    
-    // Ak existujú definované slugy, filtruj podľa nich
-    if (!empty($program_slugs)) {
-        $args['post_name__in'] = $program_slugs;
-    }
-    
-    $query = new WP_Query($args);
-    
-    $programs = [];
-    if ($query->have_posts()) {
-        while ($query->have_posts()) {
-            $query->the_post();
-            
-            $post_id = get_the_ID();
-            $age_from = get_post_meta($post_id, 'spa_age_from', true);
-            $age_to = get_post_meta($post_id, 'spa_age_to', true);
-            
-            // Určenie typu účastníka
-            $target = spa_determine_participant_type($age_from, $age_to);
-            
-            // Vytvorenie labelu
-            $label = spa_format_program_label(get_the_title(), $age_from, $age_to, $target);
-            
-            $programs[] = [
-                'id' => get_post_field('post_name'),
-                'label' => $label,
-                'target' => $target,
-                'age_min' => $age_from ? intval($age_from) : null,
-                'age_max' => $age_to ? intval($age_to) : null,
-            ];
-        }
-        wp_reset_postdata();
-    }
-    
-    return $programs;
-}
-
-/**
  * Helper: Určenie typu účastníka na základe veku
  * 
- * ZÁVÄZNÁ LOGIKA:
- * 1. DOSPELÍ: age_from >= 18 AND age_to IS NULL
- * 2. DETI/MLÁDEŽ: age_to <= 18
- * 3. MIXED: age_from < 18 AND age_to > 18
+ * ŠPORTOVÁ KATEGORIZÁCIA:
+ * 1. DETI: age_to <= 11 ALEBO (age_from < 12 && age_to IS NULL)
+ * 2. MLÁDEŽ: age_from >= 12 && age_to <= 17
+ * 3. DOSPELÍ: age_from >= 18
  * 
  * @param int|string $age_from Minimálny vek
  * @param int|string $age_to Maximálny vek
- * @return string 'child' | 'adult' | 'mixed'
+ * @return string 'child' | 'youth' | 'adult'
  */
 function spa_determine_participant_type($age_from, $age_to) {
     $age_from = intval($age_from);
     $age_to = !empty($age_to) ? intval($age_to) : null;
     
-    // PRAVIDLO 1: DOSPELÍ - age_from >= 18 AND age_to IS NULL
-    if ($age_from >= 18 && $age_to === null) {
-        return 'adult';
+    // PRAVIDLO 1: DETI
+    // - age_to <= 11
+    // - ALEBO age_from < 12 && age_to IS NULL (napr. 8+, 10+)
+    if ($age_to !== null && $age_to <= 11) {
+        return 'child';
     }
-    
-    // PRAVIDLO 2: DETI/MLÁDEŽ - age_to <= 18
-    if ($age_to !== null && $age_to <= 18) {
+    if ($age_from < 12 && $age_to === null) {
         return 'child';
     }
     
-    // PRAVIDLO 3: MIXED - age_from < 18 AND age_to > 18
-    if ($age_from < 18 && $age_to !== null && $age_to > 18) {
-        return 'mixed';
+    // PRAVIDLO 2: MLÁDEŽ
+    // - age_from >= 12 && age_to <= 17
+    if ($age_from >= 12 && $age_to !== null && $age_to <= 17) {
+        return 'youth';
     }
     
-    // Default fallback
-    return 'mixed';
+    // PRAVIDLO 3: DOSPELÍ
+    // - age_from >= 18
+    if ($age_from >= 18) {
+        return 'adult';
+    }
+    
+    // Fallback (nemalo by sa stať)
+    return 'child';
 }
 
 /**
  * Helper: Formátovanie labelu programu
  * 
  * FORMÁTY:
- * - DOSPELÍ: "pre dospelých / Názov"
- * - DETI: "pre deti X–Y r. / Názov"
- * - MIXED: "pre mládež a dospelých X+ r. / Názov"
+ * - DETI: "pre deti X–Y r. / Názov" alebo "pre deti X+ r. / Názov"
+ * - MLÁDEŽ: "pre mládež X–Y r. / Názov"
+ * - DOSPELÍ: "pre dospelých X+ r. / Názov"
  * 
  * @param string $title Názov programu
  * @param int|string $age_from Min vek
@@ -417,27 +349,31 @@ function spa_format_program_label($title, $age_from, $age_to, $target) {
     $prefix = '';
     
     switch ($target) {
-        case 'adult':
-            // DOSPELÍ: "pre dospelých"
-            $prefix = 'pre dospelých';
-            break;
-            
         case 'child':
-            // DETI/MLÁDEŽ: "pre deti X–Y r."
+            // DETI: "pre deti X–Y r." alebo "pre deti X+ r."
             $prefix = 'pre deti';
             
             if ($age_from > 0 && $age_to !== null) {
                 $prefix .= " {$age_from}–{$age_to} r.";
             } elseif ($age_from > 0) {
                 $prefix .= " {$age_from}+ r.";
-            } elseif ($age_to !== null) {
-                $prefix .= " do {$age_to} r.";
             }
             break;
             
-        case 'mixed':
-            // MIXED: "pre mládež a dospelých X+ r."
-            $prefix = 'pre mládež a dospelých';
+        case 'youth':
+            // MLÁDEŽ: "pre mládež X–Y r."
+            $prefix = 'pre mládež';
+            
+            if ($age_from > 0 && $age_to !== null) {
+                $prefix .= " {$age_from}–{$age_to} r.";
+            } elseif ($age_from > 0) {
+                $prefix .= " {$age_from}+ r.";
+            }
+            break;
+            
+        case 'adult':
+            // DOSPELÍ: "pre dospelých X+ r."
+            $prefix = 'pre dospelých';
             
             if ($age_from > 0) {
                 $prefix .= " {$age_from}+ r.";
