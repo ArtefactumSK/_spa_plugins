@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: SPA System
+ * Plugin Name: SPA System MAIN
  * Plugin URI: https://artefactum.sk/spa
  * Description: Komplexný registračný a manažérsky systém pre športovú akadémiu
  * Version: 1.0.0

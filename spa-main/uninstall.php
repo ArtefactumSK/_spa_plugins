@@ -1,6 +1,6 @@
 <?php
 /**
- * SPA System Uninstall
+ * SPA System MAIN Uninstall
  * Spustí sa pri odstránení pluginu cez WordPress admin
  */
 

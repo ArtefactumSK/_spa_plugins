@@ -1,7 +1,7 @@
 <?php
 /**
- * SPA System Core
- * Centrálna logika pre spracovanie registračných dát
+ * SPA System MAIN Core
+ * Centrálna logika pre spracovanie registračných dát MAIN
  */
 
 if (!defined('ABSPATH')) {

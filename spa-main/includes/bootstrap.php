@@ -1,6 +1,6 @@
 <?php
 /**
- * SPA System Bootstrap
+ * SPA System MAIN  Bootstrap
  * Inicializácia pluginu a načítanie závislostí
  */
 

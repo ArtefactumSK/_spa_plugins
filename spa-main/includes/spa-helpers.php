@@ -1,6 +1,6 @@
 <?php
 /**
- * SPA System Helpers
+ * SPA System MAIN Helpers
  * Helper funkcie pre validáciu a spracovanie dát
  */
 
