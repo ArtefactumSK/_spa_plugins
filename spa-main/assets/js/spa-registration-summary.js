@@ -70,6 +70,22 @@
             loadPrograms(cityId, programField);
         });
 
+        // Event listener na zmenu programu → automatická voľba typu účastníka
+        programField.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            
+            if (!selectedOption || !selectedOption.value) {
+                return;
+            }
+            
+            // Získaj data-target z option elementu
+            const target = selectedOption.getAttribute('data-target');
+            
+            if (target) {
+                handleParticipantTypeSelection(target);
+            }
+        });
+
         console.log('[SPA] Dynamické selecty inicializované.');
     }
 
@@ -152,10 +168,56 @@
         programs.forEach(program => {
             const option = document.createElement('option');
             option.value = program.id;
-            option.textContent = program.name;
+            option.textContent = program.label;
+            
+            // Pridaj data atribúty pre JS logiku
+            option.setAttribute('data-target', program.target);
+            if (program.age_min) option.setAttribute('data-age-min', program.age_min);
+            if (program.age_max) option.setAttribute('data-age-max', program.age_max);
+            
             selectElement.appendChild(option);
         });
         selectElement.disabled = false;
+    }
+
+    /**
+     * Automatická voľba typu účastníka na základe programu
+     */
+    function handleParticipantTypeSelection(target) {
+        // Nájdi radio buttony pre typ účastníka
+        // GF používa typicky: input[name="input_X"][value="Y"]
+        
+        // Predpokladáme, že GF má polia s hodnotami obsahujúcimi "Dieťa" a "Dospelá osoba"
+        const radioButtons = document.querySelectorAll('input[type="radio"]');
+        
+        radioButtons.forEach(radio => {
+            const label = radio.parentElement.textContent.trim().toLowerCase();
+            
+            // Detekcia typu na základe labelu
+            const isChildOption = label.includes('dieťa') || label.includes('diet') || label.includes('mladš');
+            const isAdultOption = label.includes('dospel') || label.includes('18+') || label.includes('adult');
+            
+            if (target === 'child') {
+                if (isChildOption) {
+                    radio.checked = true;
+                    radio.disabled = false;
+                } else if (isAdultOption) {
+                    radio.checked = false;
+                    radio.disabled = true;
+                }
+            } else if (target === 'adult') {
+                if (isAdultOption) {
+                    radio.checked = true;
+                    radio.disabled = false;
+                } else if (isChildOption) {
+                    radio.checked = false;
+                    radio.disabled = true;
+                }
+            } else if (target === 'mixed') {
+                // Oba povolené, žiadny disabled
+                radio.disabled = false;
+            }
+        });
     }
 
     /**

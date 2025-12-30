@@ -213,11 +213,7 @@ add_action('wp_ajax_nopriv_spa_get_programs', 'spa_ajax_get_programs');
 
 /**
  * Helper: Získanie programov pre dané mesto (DYNAMICKY z CPT)
- * 
- * LOGIKA:
- * 1. Nájdi spa_place pre dané mesto
- * 2. Ak spa_place má postmeta 'spa_place_programs' → použi to
- * 3. Inak vráť VŠETKY publikované spa_group (fallback)
+ * Vracia programy s vekom a typom účastníka
  */
 function spa_get_programs_for_city_dynamic($city_name) {
     global $wpdb;
@@ -237,29 +233,15 @@ function spa_get_programs_for_city_dynamic($city_name) {
     $place_id = $wpdb->get_var($place_sql);
     
     // KROK 2: Ak spa_place má definované programy v postmeta
+    $program_slugs = [];
     if ($place_id) {
         $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
-        
         if (!empty($programs_meta) && is_array($programs_meta)) {
-            // Načítaj spa_group podľa slugov z meta
-            $programs = [];
-            foreach ($programs_meta as $slug) {
-                $program_post = get_page_by_path($slug, OBJECT, 'spa_group');
-                if ($program_post && $program_post->post_status === 'publish') {
-                    $programs[] = [
-                        'id' => $program_post->post_name,
-                        'name' => $program_post->post_title,
-                    ];
-                }
-            }
-            
-            if (!empty($programs)) {
-                return $programs;
-            }
+            $program_slugs = $programs_meta;
         }
     }
     
-    // KROK 3: FALLBACK – vráť VŠETKY publikované spa_group
+    // KROK 3: Načítaj spa_group programy
     $args = [
         'post_type' => 'spa_group',
         'post_status' => 'publish',
@@ -268,19 +250,201 @@ function spa_get_programs_for_city_dynamic($city_name) {
         'order' => 'ASC',
     ];
     
+    // Ak existujú definované slugy, filtruj podľa nich
+    if (!empty($program_slugs)) {
+        $args['post_name__in'] = $program_slugs;
+    }
+    
     $query = new WP_Query($args);
     
     $programs = [];
     if ($query->have_posts()) {
         while ($query->have_posts()) {
             $query->the_post();
+            
+            $post_id = get_the_ID();
+            $age_from = get_post_meta($post_id, 'spa_age_from', true);
+            $age_to = get_post_meta($post_id, 'spa_age_to', true);
+            
+            // Určenie typu účastníka
+            $target = spa_determine_participant_type($age_from, $age_to);
+            
+            // Vytvorenie labelu
+            $label = spa_format_program_label(get_the_title(), $age_from, $age_to, $target);
+            
             $programs[] = [
                 'id' => get_post_field('post_name'),
-                'name' => get_the_title(),
+                'label' => $label,
+                'target' => $target,
+                'age_min' => $age_from ? intval($age_from) : null,
+                'age_max' => $age_to ? intval($age_to) : null,
             ];
         }
         wp_reset_postdata();
     }
     
     return $programs;
+}
+
+/**
+ * Helper: Získanie programov pre dané mesto (DYNAMICKY z CPT)
+ * Vracia programy s vekom a typom účastníka
+ */
+function spa_get_programs_for_city_dynamic($city_name) {
+    global $wpdb;
+    
+    // KROK 1: Nájdi spa_place pre dané mesto
+    $place_sql = $wpdb->prepare("
+        SELECT p.ID
+        FROM {$wpdb->posts} p
+        INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+        WHERE p.post_type = 'spa_place'
+        AND p.post_status = 'publish'
+        AND pm.meta_key = 'spa_place_city'
+        AND pm.meta_value = %s
+        LIMIT 1
+    ", $city_name);
+    
+    $place_id = $wpdb->get_var($place_sql);
+    
+    // KROK 2: Ak spa_place má definované programy v postmeta
+    $program_slugs = [];
+    if ($place_id) {
+        $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
+        if (!empty($programs_meta) && is_array($programs_meta)) {
+            $program_slugs = $programs_meta;
+        }
+    }
+    
+    // KROK 3: Načítaj spa_group programy
+    $args = [
+        'post_type' => 'spa_group',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC',
+    ];
+    
+    // Ak existujú definované slugy, filtruj podľa nich
+    if (!empty($program_slugs)) {
+        $args['post_name__in'] = $program_slugs;
+    }
+    
+    $query = new WP_Query($args);
+    
+    $programs = [];
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            
+            $post_id = get_the_ID();
+            $age_from = get_post_meta($post_id, 'spa_age_from', true);
+            $age_to = get_post_meta($post_id, 'spa_age_to', true);
+            
+            // Určenie typu účastníka
+            $target = spa_determine_participant_type($age_from, $age_to);
+            
+            // Vytvorenie labelu
+            $label = spa_format_program_label(get_the_title(), $age_from, $age_to, $target);
+            
+            $programs[] = [
+                'id' => get_post_field('post_name'),
+                'label' => $label,
+                'target' => $target,
+                'age_min' => $age_from ? intval($age_from) : null,
+                'age_max' => $age_to ? intval($age_to) : null,
+            ];
+        }
+        wp_reset_postdata();
+    }
+    
+    return $programs;
+}
+
+/**
+ * Helper: Určenie typu účastníka na základe veku
+ * 
+ * ZÁVÄZNÁ LOGIKA:
+ * 1. DOSPELÍ: age_from >= 18 AND age_to IS NULL
+ * 2. DETI/MLÁDEŽ: age_to <= 18
+ * 3. MIXED: age_from < 18 AND age_to > 18
+ * 
+ * @param int|string $age_from Minimálny vek
+ * @param int|string $age_to Maximálny vek
+ * @return string 'child' | 'adult' | 'mixed'
+ */
+function spa_determine_participant_type($age_from, $age_to) {
+    $age_from = intval($age_from);
+    $age_to = !empty($age_to) ? intval($age_to) : null;
+    
+    // PRAVIDLO 1: DOSPELÍ - age_from >= 18 AND age_to IS NULL
+    if ($age_from >= 18 && $age_to === null) {
+        return 'adult';
+    }
+    
+    // PRAVIDLO 2: DETI/MLÁDEŽ - age_to <= 18
+    if ($age_to !== null && $age_to <= 18) {
+        return 'child';
+    }
+    
+    // PRAVIDLO 3: MIXED - age_from < 18 AND age_to > 18
+    if ($age_from < 18 && $age_to !== null && $age_to > 18) {
+        return 'mixed';
+    }
+    
+    // Default fallback
+    return 'mixed';
+}
+
+/**
+ * Helper: Formátovanie labelu programu
+ * 
+ * FORMÁTY:
+ * - DOSPELÍ: "pre dospelých / Názov"
+ * - DETI: "pre deti X–Y r. / Názov"
+ * - MIXED: "pre mládež a dospelých X+ r. / Názov"
+ * 
+ * @param string $title Názov programu
+ * @param int|string $age_from Min vek
+ * @param int|string $age_to Max vek
+ * @param string $target Typ účastníka
+ * @return string Formátovaný label
+ */
+function spa_format_program_label($title, $age_from, $age_to, $target) {
+    $age_from = intval($age_from);
+    $age_to = !empty($age_to) ? intval($age_to) : null;
+    
+    $prefix = '';
+    
+    switch ($target) {
+        case 'adult':
+            // DOSPELÍ: "pre dospelých"
+            $prefix = 'pre dospelých';
+            break;
+            
+        case 'child':
+            // DETI/MLÁDEŽ: "pre deti X–Y r."
+            $prefix = 'pre deti';
+            
+            if ($age_from > 0 && $age_to !== null) {
+                $prefix .= " {$age_from}–{$age_to} r.";
+            } elseif ($age_from > 0) {
+                $prefix .= " {$age_from}+ r.";
+            } elseif ($age_to !== null) {
+                $prefix .= " do {$age_to} r.";
+            }
+            break;
+            
+        case 'mixed':
+            // MIXED: "pre mládež a dospelých X+ r."
+            $prefix = 'pre mládež a dospelých';
+            
+            if ($age_from > 0) {
+                $prefix .= " {$age_from}+ r.";
+            }
+            break;
+    }
+    
+    // Finálny formát: "prefix / Názov programu"
+    return $prefix . ' / ' . $title;
 }
