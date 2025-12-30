@@ -139,19 +139,44 @@ function spa_process_registration($registration) {
 
 /**
  * ============================================
- * AJAX ENDPOINTY PRE DYNAMICKÉ SELECTY
+ * AJAX ENDPOINTY PRE DYNAMICKÉ SELECTY (CPT)
+ * Dynamické načítanie z spa_place a spa_group
  * ============================================
  */
 
 /**
- * AJAX: Získanie zoznamu miest
+ * AJAX: Získanie zoznamu miest z CPT spa_place
  */
 function spa_ajax_get_cities() {
-    // Dummy data (pripravené na budúce DB/CPT)
-    $cities = [
-        ['id' => 1, 'name' => 'Malacky'],
-        ['id' => 2, 'name' => 'Košice'],
-    ];
+    global $wpdb;
+    
+    // SQL: Unikátne mestá z publikovaných spa_place
+    $sql = "
+        SELECT DISTINCT pm.meta_value as city_name
+        FROM {$wpdb->postmeta} pm
+        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE p.post_type = 'spa_place'
+        AND p.post_status = 'publish'
+        AND pm.meta_key = 'spa_place_city'
+        AND pm.meta_value != ''
+        ORDER BY pm.meta_value ASC
+    ";
+    
+    $results = $wpdb->get_results($sql);
+    
+    if (empty($results)) {
+        wp_send_json_error(['message' => 'Nenašli sa žiadne aktívne mestá.']);
+        return;
+    }
+    
+    // Formátovanie pre JS
+    $cities = [];
+    foreach ($results as $row) {
+        $cities[] = [
+            'id' => sanitize_title($row->city_name),
+            'name' => $row->city_name,
+        ];
+    }
     
     wp_send_json_success($cities);
 }
@@ -160,30 +185,21 @@ add_action('wp_ajax_nopriv_spa_get_cities', 'spa_ajax_get_cities');
 
 /**
  * AJAX: Získanie programov podľa mesta
+ * Načítava z CPT spa_group (publikované)
  */
 function spa_ajax_get_programs() {
-    // Validácia vstupu
-    $city_id = isset($_POST['city_id']) ? intval($_POST['city_id']) : 0;
+    $city_slug = isset($_POST['city_id']) ? sanitize_text_field($_POST['city_id']) : '';
     
-    if ($city_id === 0) {
+    if (empty($city_slug)) {
         wp_send_json_error(['message' => 'Neplatné ID mesta.']);
         return;
     }
     
-    // Dummy data (pripravené na budúce DB/CPT)
-    $all_programs = [
-        ['id' => 10, 'name' => 'Mladý akrobati', 'city_id' => 1],
-        ['id' => 11, 'name' => 'Little Big Heroes', 'city_id' => 1],
-        ['id' => 20, 'name' => 'SPA Juniori', 'city_id' => 2],
-    ];
+    // Konverzia slug → názov mesta
+    $city_name = ucfirst(str_replace('-', ' ', $city_slug));
     
-    // Filtrácia podľa city_id
-    $programs = array_filter($all_programs, function($program) use ($city_id) {
-        return $program['city_id'] === $city_id;
-    });
-    
-    // Reset indexov
-    $programs = array_values($programs);
+    // Načítanie programov pre dané mesto
+    $programs = spa_get_programs_for_city_dynamic($city_name);
     
     if (empty($programs)) {
         wp_send_json_error(['message' => 'Pre toto mesto nie sú dostupné žiadne programy.']);
@@ -194,3 +210,77 @@ function spa_ajax_get_programs() {
 }
 add_action('wp_ajax_spa_get_programs', 'spa_ajax_get_programs');
 add_action('wp_ajax_nopriv_spa_get_programs', 'spa_ajax_get_programs');
+
+/**
+ * Helper: Získanie programov pre dané mesto (DYNAMICKY z CPT)
+ * 
+ * LOGIKA:
+ * 1. Nájdi spa_place pre dané mesto
+ * 2. Ak spa_place má postmeta 'spa_place_programs' → použi to
+ * 3. Inak vráť VŠETKY publikované spa_group (fallback)
+ */
+function spa_get_programs_for_city_dynamic($city_name) {
+    global $wpdb;
+    
+    // KROK 1: Nájdi spa_place pre dané mesto
+    $place_sql = $wpdb->prepare("
+        SELECT p.ID
+        FROM {$wpdb->posts} p
+        INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+        WHERE p.post_type = 'spa_place'
+        AND p.post_status = 'publish'
+        AND pm.meta_key = 'spa_place_city'
+        AND pm.meta_value = %s
+        LIMIT 1
+    ", $city_name);
+    
+    $place_id = $wpdb->get_var($place_sql);
+    
+    // KROK 2: Ak spa_place má definované programy v postmeta
+    if ($place_id) {
+        $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
+        
+        if (!empty($programs_meta) && is_array($programs_meta)) {
+            // Načítaj spa_group podľa slugov z meta
+            $programs = [];
+            foreach ($programs_meta as $slug) {
+                $program_post = get_page_by_path($slug, OBJECT, 'spa_group');
+                if ($program_post && $program_post->post_status === 'publish') {
+                    $programs[] = [
+                        'id' => $program_post->post_name,
+                        'name' => $program_post->post_title,
+                    ];
+                }
+            }
+            
+            if (!empty($programs)) {
+                return $programs;
+            }
+        }
+    }
+    
+    // KROK 3: FALLBACK – vráť VŠETKY publikované spa_group
+    $args = [
+        'post_type' => 'spa_group',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC',
+    ];
+    
+    $query = new WP_Query($args);
+    
+    $programs = [];
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            $programs[] = [
+                'id' => get_post_field('post_name'),
+                'name' => get_the_title(),
+            ];
+        }
+        wp_reset_postdata();
+    }
+    
+    return $programs;
+}
