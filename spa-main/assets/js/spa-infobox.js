@@ -132,30 +132,84 @@
     function renderInfobox(content, icons) {
         const container = document.getElementById('spa-infobox-container');
         if (!container) return;
-    
-        container.innerHTML = ''; // Vyčisti
-    
-        // 1. IKONY NAVRCHU
-        if (icons && Object.keys(icons).length > 0) {
-            const iconsWrapper = document.createElement('div');
-            iconsWrapper.className = 'spa-infobox-icons';
-            
-            Object.values(icons).forEach(iconSvg => {
-                if (iconSvg) {
-                    const iconDiv = document.createElement('div');
-                    iconDiv.className = 'spa-infobox-icon';
-                    iconDiv.innerHTML = iconSvg;
-                    iconsWrapper.appendChild(iconDiv);
-                }
-            });
-            
-            container.appendChild(iconsWrapper);
-        }
-    
-        // 2. OBSAH POD IKONAMI
+
+        // 0. Vyčisti kontajner (JEDINÝ render bod)
+        container.innerHTML = '';
+
+        /* ==================================================
+        1. OBSAH – WP stránka (SPA Infobox Wizard)
+        ================================================== */
         const contentDiv = document.createElement('div');
         contentDiv.className = 'spa-infobox-content';
         contentDiv.innerHTML = content;
         container.appendChild(contentDiv);
+
+        /* ==================================================
+        1.5 DYNAMICKÝ SUMMARY (mesto, vek, ...)
+        ================================================== */
+        if (wizardData.city_name || wizardData.program_age) {
+
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'spa-infobox-summary';
+
+            let summaryHtml = '<ul class="spa-summary-list">';
+
+            if (wizardData.city_name) {
+                summaryHtml += `
+                    <li class="spa-summary-item spa-summary-city">
+                        <strong>Mesto:</strong> ${wizardData.city_name}
+                    </li>`;
+            }
+
+            if (wizardData.program_age) {
+                summaryHtml += `
+                    <li class="spa-summary-item spa-summary-age">
+                        <strong>Vek:</strong> ${wizardData.program_age} rokov
+                    </li>`;
+            }
+
+            summaryHtml += '</ul>';
+
+            summaryDiv.innerHTML = summaryHtml;
+            container.appendChild(summaryDiv);
+        }
+
+
+
+        /* ==================================================
+        2. IKONY – kontrolovaná veľkosť SVG
+        ================================================== */
+        if (icons && Object.keys(icons).length > 0) {
+            const iconsWrapper = document.createElement('div');
+            iconsWrapper.className = 'spa-infobox-icons';
+
+            Object.values(icons).forEach(iconSvg => {
+                if (!iconSvg) return;
+
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'spa-infobox-icon';
+                iconDiv.innerHTML = iconSvg;
+
+                // 🔧 OPRAVA SVG VEĽKOSTI (kľúčová časť)
+                const svgEl = iconDiv.querySelector('svg');
+                if (svgEl) {
+                    // odstráň pevné rozmery zo SVG
+                    svgEl.removeAttribute('width');
+                    svgEl.removeAttribute('height');
+
+                    // vynúť prispôsobenie rodičovi (.spa-infobox-icon)
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+
+                    // zachovaj pomer strán
+                    svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                }
+
+                iconsWrapper.appendChild(iconDiv);
+            });
+
+            container.appendChild(iconsWrapper);
+        }
     }
+
 })();
