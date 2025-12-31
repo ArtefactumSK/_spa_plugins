@@ -226,20 +226,6 @@ function spa_get_infobox_icons($state) {
         'stroke' => '#0066cc', // Primárna farba SPA
     ];
     
-    /* switch ($state) {
-        case 0:
-            $icons['main'] = spa_icon('location', 'spa-icon-location', $icon_options);
-            break;
-        case 1:
-            $icons['location'] = spa_icon('location', 'spa-icon-location', $icon_options);
-            $icons['program'] = spa_icon('program', 'spa-icon-program', $icon_options);
-            break;
-        case 2:
-            $icons['location'] = spa_icon('location', 'spa-icon-location', $icon_options);
-            $icons['program'] = spa_icon('program', 'spa-icon-program', $icon_options);
-            $icons['time'] = spa_icon('time', 'spa-icon-time', $icon_options);
-            break;
-    } */
     switch ($state) {
         case 0:
             $options = ['stroke' => '#cccccc']; // Sivá - nič nevybrané
