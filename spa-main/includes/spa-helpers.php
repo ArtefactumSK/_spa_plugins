@@ -86,3 +86,52 @@ function spa_log($message, $data = null) {
         error_log($log_message);
     }
 }
+
+
+<?php
+/**
+ * AJAX Handler: Vráti HTML obsah infoboxu
+ */
+add_action('wp_ajax_spa_get_infobox_content', 'spa_ajax_get_infobox_content');
+add_action('wp_ajax_nopriv_spa_get_infobox_content', 'spa_ajax_get_infobox_content');
+
+function spa_ajax_get_infobox_content() {
+    $state = isset($_POST['state']) ? intval($_POST['state']) : 0;
+    $city_name = isset($_POST['city_name']) ? sanitize_text_field($_POST['city_name']) : '';
+    $program_name = isset($_POST['program_name']) ? sanitize_text_field($_POST['program_name']) : '';
+    $program_age = isset($_POST['program_age']) ? sanitize_text_field($_POST['program_age']) : '';
+
+    error_log('[SPA] Infobox AJAX called | Data: ' . print_r($_POST, true));
+
+    // Ikony pre stavy
+    $icons = [
+        0 => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
+        1 => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
+        2 => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4" stroke="#4caf50" fill="none"/></svg>'
+    ];
+
+    // Obsah pre rôzne stavy
+    $content = '';
+
+    switch ($state) {
+        case 0:
+            $content = '<p style="color: #999;">Vyberte mesto a program</p>';
+            break;
+        
+        case 1:
+            $content = '<p style="font-weight: bold; color: #ff9800;">📍 ' . esc_html($city_name) . '</p>';
+            $content .= '<p style="color: #999;">Teraz vyberte program</p>';
+            break;
+        
+        case 2:
+            $content = '<p style="font-weight: bold; color: #4caf50;">📍 ' . esc_html($city_name) . '</p>';
+            $content .= '<p style="color: #333;">🎯 ' . esc_html($program_name) . '</p>';
+            $content .= '<p style="color: #666;">👶 Vek: ' . esc_html($program_age) . '</p>';
+            break;
+    }
+
+    wp_send_json_success([
+        'content' => $content,
+        'icons' => ['main' => $icons[$state]]
+    ]);
+}
