@@ -189,6 +189,9 @@ function spa_ajax_get_infobox_content() {
     // Pridaj ikony podľa stavu
     $icons = spa_get_infobox_icons($state);
     
+    // Získaj kapacitu (mock hodnota - TODO: nahraď skutočným dotazom)
+    $capacity_free = 5;
+
     wp_send_json_success([
         'content' => $content,
         'icons' => $icons,
