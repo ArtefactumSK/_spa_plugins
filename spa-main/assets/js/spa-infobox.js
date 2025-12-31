@@ -74,16 +74,35 @@
         }
 
         // Sleduj zmenu programu
+        // Sleduj zmenu programu
         const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+
+        console.log('[SPA Infobox] Program field selector:', `[name="${spaConfig.fields.spa_program}"]`);
+        console.log('[SPA Infobox] Program field element:', programField);
+
         if (programField) {
             programField.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 
+                console.log('[SPA Infobox] Program changed - value:', this.value);
+                console.log('[SPA Infobox] Program changed - text:', selectedOption.text);
+                
                 if (this.value) {
                     wizardData.program_name = selectedOption.text;
-                    wizardData.program_age = selectedOption.getAttribute('data-age-min') + '–' + 
-                                            (selectedOption.getAttribute('data-age-max') || '+');
+                    
+                    // Parsuj vek z názvu programu
+                    const ageMatch = selectedOption.text.match(/(\d+)[–-](\d+)/);
+                    if (ageMatch) {
+                        wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                    } else {
+                        const agePlusMatch = selectedOption.text.match(/(\d+)\+/);
+                        if (agePlusMatch) {
+                            wizardData.program_age = agePlusMatch[1] + '+';
+                        }
+                    }
+                    
                     currentState = 2;
+                    console.log('[SPA Infobox] State changed to 2, wizardData:', wizardData);
                 } else {
                     currentState = wizardData.city_name ? 1 : 0;
                     wizardData.program_name = '';
@@ -92,6 +111,8 @@
                 
                 loadInfoboxContent(currentState);
             });
+        } else {
+            console.error('[SPA Infobox] Program field NOT FOUND!');
         }
     }
 
