@@ -154,6 +154,14 @@ function spa_ajax_get_infobox_content() {
     $program_name = isset($_POST['program_name']) ? sanitize_text_field($_POST['program_name']) : '';
     $program_age = isset($_POST['program_age']) ? sanitize_text_field($_POST['program_age']) : '';
     
+    // 🔍 DEBUG LOG
+    spa_log('Infobox AJAX called', [
+        'state' => $state,
+        'city_name' => $city_name,
+        'program_name' => $program_name,
+        'program_age' => $program_age
+    ]);
+    
     // Získaj obsah z WP stránky
     $page_id = spa_get_infobox_page_id();
     
@@ -168,45 +176,23 @@ function spa_ajax_get_infobox_content() {
         return;
     }
     
-    $content = $page->post_content;
-    
-    // Aplikuj WordPress shortcody a formátovanie
-    $content = apply_filters('the_content', $content);
-    
-    // Extrahuj obsah pre daný stav
-    $state_content = spa_extract_state_content($content, $state);
+    // Získaj CELÝ obsah stránky (ako ho edituje admin)
+    $content = apply_filters('the_content', $page->post_content);
     
     // Nahraď placeholdery
-    $state_content = spa_replace_placeholders($state_content, [
+    $content = spa_replace_placeholders($content, [
         'city_name' => $city_name,
         'program_name' => $program_name,
         'program_age' => $program_age,
     ]);
     
-    // Pridaj ikony
+    // Pridaj ikony podľa stavu
     $icons = spa_get_infobox_icons($state);
     
     wp_send_json_success([
-        'content' => $state_content,
+        'content' => $content,
         'icons' => $icons,
     ]);
-}
-
-/**
- * Extrakcia obsahu pre daný stav
- * 
- * @param string $content Celý obsah stránky
- * @param int $state Číslo stavu (0, 1, 2)
- * @return string Obsah pre daný stav
- */
-function spa_extract_state_content($content, $state) {
-    $pattern = '/<div class="spa-infobox-state-' . $state . '">(.*?)<\/div>/s';
-    
-    if (preg_match($pattern, $content, $matches)) {
-        return $matches[1];
-    }
-    
-    return '<p>Obsah pre tento stav nebol nájdený.</p>';
 }
 
 /**
@@ -274,3 +260,28 @@ function spa_get_infobox_icons($state) {
     
     return $icons;
 }
+
+/**
+ * Admin nástroj: Manuálne nastavenie infobox page ID
+ */
+add_action('admin_init', function() {
+    // Trigger: ?spa_set_infobox_page=730
+    if (isset($_GET['spa_set_infobox_page']) && current_user_can('administrator')) {
+        $page_id = intval($_GET['spa_set_infobox_page']);
+        
+        // Kontrola či stránka existuje
+        $page = get_post($page_id);
+        
+        if (!$page || $page->post_status !== 'publish') {
+            wp_die('Stránka s ID ' . $page_id . ' neexistuje alebo nie je publikovaná.');
+        }
+        
+        // Ulož ID
+        update_option('spa_infobox_page_id', $page_id);
+        update_post_meta($page_id, '_spa_system_page', 'infobox_wizard');
+        
+        // Presmeruj na editáciu stránky
+        wp_redirect(admin_url('post.php?post=' . $page_id . '&action=edit&message=updated'));
+        exit;
+    }
+});

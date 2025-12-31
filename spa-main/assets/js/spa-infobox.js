@@ -95,6 +95,8 @@
      * Načítanie obsahu infoboxu cez AJAX
      */
     function loadInfoboxContent(state) {
+        console.log('[SPA Infobox] Loading state:', state, wizardData); // 🔍 DEBUG
+        
         const formData = new FormData();
         formData.append('action', 'spa_get_infobox_content');
         formData.append('state', state);
@@ -126,11 +128,10 @@
     function renderInfobox(content, icons) {
         const container = document.getElementById('spa-infobox-container');
         if (!container) return;
-
-        // Vyčisti kontainer
-        container.innerHTML = '';
-
-        // Pridaj ikony
+    
+        container.innerHTML = ''; // Vyčisti
+    
+        // 1. IKONY NAVRCHU
         if (icons && Object.keys(icons).length > 0) {
             const iconsWrapper = document.createElement('div');
             iconsWrapper.className = 'spa-infobox-icons';
@@ -146,12 +147,11 @@
             
             container.appendChild(iconsWrapper);
         }
-
-        // Pridaj obsah
+    
+        // 2. OBSAH POD IKONAMI
         const contentDiv = document.createElement('div');
         contentDiv.className = 'spa-infobox-content';
         contentDiv.innerHTML = content;
         container.appendChild(contentDiv);
     }
-
 })();

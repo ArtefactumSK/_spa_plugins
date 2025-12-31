@@ -8,9 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Definovanie konštánt pluginu – KONTROLA ČI UŽ NEEXISTUJÚ (téma ich môže mať)
-if (!defined('SPA_VERSION')) {
-    define('SPA_VERSION', '1.0.0');
+// Definovanie konštánt pluginu – POUŽITIE VLASTNÉHO PREFIXU
+if (!defined('SPA_PLUGIN_VERSION')) {
+    define('SPA_PLUGIN_VERSION', '1.0.0');
 }
 if (!defined('SPA_PLUGIN_DIR')) {
     define('SPA_PLUGIN_DIR', plugin_dir_path(dirname(__FILE__)));
@@ -20,6 +20,11 @@ if (!defined('SPA_PLUGIN_URL')) {
 }
 if (!defined('SPA_CONFIG_DIR')) {
     define('SPA_CONFIG_DIR', SPA_PLUGIN_DIR . 'spa-config/');
+}
+
+// Spätná kompatibilita - ak téma nepoužíva SPA_VERSION
+if (!defined('SPA_VERSION')) {
+    define('SPA_VERSION', SPA_PLUGIN_VERSION);
 }
 
 /**
@@ -88,7 +93,7 @@ function spa_enqueue_gf_scripts($form) {
         'spa-registration',
         SPA_PLUGIN_URL . 'assets/js/spa-registration-summary.js',
         ['jquery'],
-        SPA_VERSION,
+        SPA_PLUGIN_VERSION,
         true
     );
     
@@ -97,7 +102,7 @@ function spa_enqueue_gf_scripts($form) {
         'spa-infobox',
         SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
         ['spa-registration'],
-        SPA_VERSION,
+        SPA_PLUGIN_VERSION,
         true
     );
     
