@@ -187,10 +187,46 @@ function spa_ajax_get_infobox_content() {
     ]);
     
     // Pridaj ikony podľa stavu
-    $icons = spa_get_infobox_icons($state);
+    $icons = spa_get_infobox_icons($state);    
     
-    // Získaj kapacitu (mock hodnota - TODO: nahraď skutočným dotazom)
-    $capacity_free = 5;
+    // Získaj ID programu podľa názvu
+    global $wpdb;
+    $program_id = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} 
+            WHERE post_type = 'spa_program' 
+            AND post_title = %s 
+            AND post_status = 'publish' 
+            LIMIT 1",
+            $program_name
+        )
+    );
+
+    $capacity_free = null;
+
+    if ($program_id) {
+        // Načítaj kapacitu programu
+        $capacity_total = (int) get_post_meta($program_id, 'spa_capacity', true);
+        if (!$capacity_total) $capacity_total = 100;
+        
+        // Spočítaj aktívne registrácie
+        $registered_active = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(DISTINCT p.ID) 
+                FROM {$wpdb->posts} p
+                INNER JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id AND pm1.meta_key = 'program_id'
+                INNER JOIN {$wpdb->postmeta} pm2 ON p.ID = pm2.post_id AND pm2.meta_key = 'status'
+                WHERE p.post_type = 'spa_registration'
+                AND p.post_status = 'publish'
+                AND pm1.meta_value = %d
+                AND pm2.meta_value = 'active'",
+                $program_id
+            )
+        );
+        
+        // Výpočet voľnej kapacity
+        $capacity_free = max(0, $capacity_total - $registered_active);
+    }
 
     wp_send_json_success([
         'content' => $content,
