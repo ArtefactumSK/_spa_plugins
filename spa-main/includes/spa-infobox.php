@@ -243,6 +243,10 @@ function spa_get_infobox_icons($state) {
             $icons['program'] = spa_icon('program', 'spa-icon-program', $options);
             $icons['time'] = spa_icon('time', 'spa-icon-time', $options);
             break;
+            // PRIDAJ ikony pre summary
+            $icons['age'] = spa_icon('age', 'spa-icon-age', $options);
+            $icons['capacity'] = spa_icon('capacity', 'spa-icon-capacity', $options);
+            break;
     }
     
     return $icons;

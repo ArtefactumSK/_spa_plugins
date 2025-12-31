@@ -169,19 +169,29 @@
                     </li>`;
             }
 
-            // VEK s placeholder ikonou
+            // VEK s ikonou (načítanou z témy)
             if (wizardData.program_age) {
+                // Gramatika: 8+ = "rokov", 6-8 = "roky"
+                const ageLabel = wizardData.program_age.includes('+') ? 'rokov' : 'roky';
+                
+                // Ikona age (z témy)
+                const ageIconSvg = icons && icons.age ? icons.age : '<span class="spa-icon-placeholder">👶</span>';
+                
                 summaryHtml += `
                     <li class="spa-summary-item spa-summary-age">
-                        <span class="spa-summary-icon spa-icon-age"></span>
-                        <strong>Vek:</strong> ${wizardData.program_age} roky
+                        <span class="spa-summary-icon">${ageIconSvg}</span>
+                        <strong>Vek:</strong> ${wizardData.program_age} ${ageLabel}
                     </li>`;
             }
 
             // KAPACITA (len v stave 2)
             if (currentState === 2 && capacityFree !== undefined && capacityFree !== null) {
+                // Ikona capacity (z témy)
+                const capacityIconSvg = icons && icons.capacity ? icons.capacity : '<span class="spa-icon-placeholder">👥</span>';
+                
                 summaryHtml += `
                     <li class="spa-summary-item spa-summary-capacity">
+                        <span class="spa-summary-icon">${capacityIconSvg}</span>
                         <strong>Voľná kapacita:</strong> ${capacityFree} miest
                     </li>`;
             }
@@ -197,7 +207,7 @@
         /* ==================================================
         2. IKONY – kontrolovaná veľkosť SVG
         ================================================== */
-        if (icons && Object.keys(icons).length > 0) {
+        /* if (icons && Object.keys(icons).length > 0) {
             const iconsWrapper = document.createElement('div');
             iconsWrapper.className = 'spa-infobox-icons';
 
@@ -227,7 +237,7 @@
             });
 
             container.appendChild(iconsWrapper);
-        }
+        } */
     }
 
 })();
