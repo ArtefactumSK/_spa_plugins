@@ -197,7 +197,7 @@ function spa_ajax_get_infobox_content() {
         'icons' => $icons,
         'capacity_free' => $capacity_free,
     ]);
-}
+    }
 
 /**
  * Nahradenie placeholderov v obsahu
