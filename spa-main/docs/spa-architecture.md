@@ -182,6 +182,37 @@ alebo
 
 ## 9. Status dokumentu
 
+
+## System Pages
+### SPA Infobox Wizard Page
+
+    SPA používa jednu WordPress stránku ako systémový zdroj obsahu pre infobox vo wizard rozhraní.
+
+    Stránka sa vytvára manuálne administrátorom
+
+    Obsah je plne editovateľný (Block / Elementor)
+
+    Stránka nie je súčasťou verejného frontendu
+
+    Identifikácia:
+
+    → stránka je **identifikovaná výhradne pomocou WordPress Page ID**
+
+    Page ID sa uloží počas inštalácie / aktivácie SPA do systémových nastavení
+
+    slug sa používa len ako fallback pri prvotnej detekcii
+
+    Dôvod:
+
+    Page ID je stabilné a nemenné
+
+    nezávislé od jazyka, prekladov a úprav slugu
+
+    vhodné pre dlhodobú udržateľnosť architektúry
+
+
+
+
 - Stav: **AKTUÁLNY**
 - Overené podľa DB: **2025-12**
 - Autor: Artefactum / Roman Valent
