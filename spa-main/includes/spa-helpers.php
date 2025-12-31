@@ -87,8 +87,6 @@ function spa_log($message, $data = null) {
     }
 }
 
-
-<?php
 /**
  * AJAX Handler: Vráti HTML obsah infoboxu
  */

@@ -29,21 +29,12 @@ define('SPA_PLUGIN_BASENAME', plugin_basename(__FILE__));
 // Načítanie bootstrap súboru
 require_once SPA_PLUGIN_DIR . 'includes/bootstrap.php';
 
-
 /**
  * Registrácia frontend skriptov a konfigurácie
  */
 add_action('wp_enqueue_scripts', 'spa_enqueue_infobox_scripts');
 
 function spa_enqueue_infobox_scripts() {
-    // CSS
-    /* wp_enqueue_style(
-        'spa-infobox-css',
-        plugin_dir_url(__FILE__) . 'assets/css/spa-frontend.css',
-        [],
-        '1.0.0'
-    ); */
-
     // JavaScript
     wp_enqueue_script(
         'spa-infobox-js',
@@ -60,8 +51,8 @@ function spa_enqueue_infobox_scripts() {
     wp_localize_script('spa-infobox-js', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'fields' => [
-            'spa_city' => 'input_1', // Zmeň podľa GF Field ID
-            'spa_program' => 'input_12' // Zmeň podľa fields.php
+            'spa_city' => 'input_1',
+            'spa_program' => 'input_12'
         ]
     ]);
 }
