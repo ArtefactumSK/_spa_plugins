@@ -13,7 +13,7 @@
         console.error('[SPA Infobox] spaConfig nie je definovaný.');
         return; // ← ZASTAV VYKONÁVANIE
     }
-
+    let lastCapacityFree = null;
     let currentState = 0;
     let wizardData = {
         city_name: '',
@@ -72,8 +72,7 @@
                 loadInfoboxContent(currentState);
             });
         }
-
-        // Sleduj zmenu programu
+        
         // Sleduj zmenu programu
         const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
 
@@ -154,6 +153,12 @@
      * Vykreslenie infoboxu
      */
     function renderInfobox(content, icons, capacityFree) {
+        console.log('[renderInfobox]', {
+            capacityFree,
+            currentState,
+            wizardData
+        });
+        
         const container = document.getElementById('spa-infobox-container');
         if (!container) return;
 
@@ -206,10 +211,12 @@
             }
 
             // KAPACITA (len v stave 2)
-            if (currentState === 2 && capacityFree !== undefined && capacityFree !== null) {
-                // Ikona capacity (z témy)
-                const capacityIconSvg = icons && icons.capacity ? icons.capacity : '<span class="spa-icon-placeholder">👥</span>';
-                
+            if (capacityFree !== null && capacityFree !== undefined) {
+
+                const capacityIconSvg = icons && icons.capacity
+                    ? icons.capacity
+                    : '<span class="spa-icon-placeholder">👥</span>';
+            
                 summaryHtml += `
                     <li class="spa-summary-item spa-summary-capacity">
                         <span class="spa-summary-icon">${capacityIconSvg}</span>

@@ -187,43 +187,36 @@ function spa_ajax_get_infobox_content() {
     
     $icons = spa_get_infobox_icons($state);
     
-    // Výpočet kapacity
+    // Výpočet kapacity – SPRÁVNY MODEL
     global $wpdb;
-    $program_id = $wpdb->get_var(
-        $wpdb->prepare(
-            "SELECT ID FROM {$wpdb->posts} 
-             WHERE post_type = 'spa_program' 
-             AND post_title = %s 
-             AND post_status = 'publish' 
-             LIMIT 1",
-            $program_name
-        )
-    );
 
     $capacity_free = null;
 
     if ($program_id) {
+
+        // 1. Celková kapacita programu
         $capacity_total = (int) get_post_meta($program_id, 'spa_capacity', true);
-        if (!$capacity_total) {
-            $capacity_total = 100;
+        if ($capacity_total <= 0) {
+            $capacity_total = 100; // fallback
         }
-        
+
+        // 2. Počet aktívnych registrácií
         $registered_active = (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(DISTINCT p.ID) 
-                 FROM {$wpdb->posts} p
-                 INNER JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id AND pm1.meta_key = 'program_id'
-                 INNER JOIN {$wpdb->postmeta} pm2 ON p.ID = pm2.post_id AND pm2.meta_key = 'status'
-                 WHERE p.post_type = 'spa_registration'
-                 AND p.post_status = 'publish'
-                 AND pm1.meta_value = %d
-                 AND pm2.meta_value = 'active'",
+                "
+                SELECT COUNT(*)
+                FROM wp_ap5_spa_registrations
+                WHERE program_id = %d
+                AND status = 'active'
+                ",
                 $program_id
             )
         );
-        
+
+        // 3. Voľná kapacita
         $capacity_free = max(0, $capacity_total - $registered_active);
     }
+
 
     wp_send_json_success([
         'content' => $content,
