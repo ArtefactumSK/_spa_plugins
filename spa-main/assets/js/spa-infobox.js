@@ -16,6 +16,7 @@
     let lastCapacityFree = null;
     let currentState = 0;
     let wizardData = {
+        program_id: null,
         city_name: '',
         program_name: '',
         program_age: ''
@@ -88,6 +89,9 @@
                 
                 if (this.value) {
                     wizardData.program_name = selectedOption.text;
+                    wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
+                    
+                    console.log('[SPA Infobox] Program ID:', wizardData.program_id);
                     
                     // Parsuj vek z názvu programu
                     const ageMatch = selectedOption.text.match(/(\d+)[–-](\d+)/);
@@ -123,6 +127,7 @@
 
         const formData = new FormData();
         formData.append('action', 'spa_get_infobox_content');
+        formData.append('program_id', wizardData.program_id);
         formData.append('state', state);
         formData.append('city_name', wizardData.city_name);
         formData.append('program_name', wizardData.program_name);
