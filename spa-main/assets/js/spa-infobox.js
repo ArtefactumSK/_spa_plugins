@@ -149,6 +149,8 @@
         })
         .then(response => response.json())
         .then(data => {
+            console.log('[SPA Infobox] AJAX Response:', data); // DEBUG
+            
             if (data.success) {
                 renderInfobox(data.data, data.data.icons, data.data.capacity_free, data.data.price);
             } else {
@@ -164,16 +166,15 @@
      * Vykreslenie infoboxu
      */
     function renderInfobox(data, icons, capacityFree, price) {
+        console.log('[renderInfobox] Full data:', data);
+        console.log('[renderInfobox] State:', currentState, 'wizardData:', wizardData);
+        
         const content = data.content;
-        console.log('[renderInfobox]', {
-            capacityFree,
-            currentState,
-            wizardData
-        });
+        const programData = data.program;
         
         const container = document.getElementById('spa-infobox-container');
         if (!container) return;
-
+    
         // 0. Vyčisti kontajner (JEDINÝ render bod)
         container.innerHTML = '';
 
@@ -190,28 +191,33 @@
         /* ==================================================
         1.3 ÚDAJE PROGRAMU (ikona, názov, obsah)
         ================================================== */
-        if (currentState === 2 && wizardData.program_name && content.program) {
+        if (currentState === 2 && wizardData.program_name && programData) {
+            console.log('[renderInfobox] Rendering program data:', programData);
+            
             const programDiv = document.createElement('div');
             programDiv.className = 'spa-infobox-program';
             
             let programHtml = '';
             
             // Ikona programu (zväčšená)
-            if (content.program.icon) {
-                programHtml += `<div class="spa-program-icon-large">${content.program.icon}</div>`;
+            if (programData.icon) {
+                programHtml += `<div class="spa-program-icon-large">${programData.icon}</div>`;
             }
             
             // Názov programu
-            programHtml += `<h4 class="spa-program-title">${content.program.title}</h4>`;
+            if (programData.title) {
+                programHtml += `<h4 class="spa-program-title">${programData.title}</h4>`;
+            }
             
             // Obsah CPT (čistý WordPress content)
-            if (content.program.content) {
-                programHtml += `<div class="spa-program-content">${content.program.content}</div>`;
+            if (programData.content) {
+                programHtml += `<div class="spa-program-content">${programData.content}</div>`;
             }
             
             programDiv.innerHTML = programHtml;
             container.appendChild(programDiv);
         }
+        
         /* ==================================================
         1.5 DYNAMICKÝ SUMMARY (mesto, vek, kapacita)
         ================================================== */
