@@ -61,13 +61,17 @@
         if (cityField) {
             cityField.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                wizardData.city_name = selectedOption.text;
                 
-                if (this.value) {
+                if (this.value && this.value !== '0') {
+                    wizardData.city_name = selectedOption.text;
                     currentState = 1;
                 } else {
-                    currentState = 0;
+                    // Reset - vyčisti všetko
                     wizardData.city_name = '';
+                    wizardData.program_name = '';
+                    wizardData.program_id = null;
+                    wizardData.program_age = '';
+                    currentState = 0;
                 }
                 
                 loadInfoboxContent(currentState);
@@ -107,9 +111,11 @@
                     currentState = 2;
                     console.log('[SPA Infobox] State changed to 2, wizardData:', wizardData);
                 } else {
-                    currentState = wizardData.city_name ? 1 : 0;
+                    // Reset programu - vráť sa do stavu 1 (mesto) alebo 0
                     wizardData.program_name = '';
+                    wizardData.program_id = null;
                     wizardData.program_age = '';
+                    currentState = wizardData.city_name ? 1 : 0;
                 }
                 
                 loadInfoboxContent(currentState);
@@ -173,7 +179,7 @@
         /* ==================================================
         1. OBSAH – WP stránka (SPA Infobox Wizard)
         ================================================== */
-        if (currentState !== 2) {
+        if (!wizardData.program_name) {
             const contentDiv = document.createElement('div');
             contentDiv.className = 'spa-infobox-content';
             contentDiv.innerHTML = content;
