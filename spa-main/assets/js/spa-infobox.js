@@ -249,9 +249,9 @@
                         <strong>${capacityFree}</strong> ${capacityLabel}
                     </li>`;
             }
-
-            // CENA
-            if (price) {
+            
+            // CENA (len ak je vybraný program)
+            if (price && wizardData.program_name) {
                 const priceIconSvg = icons && icons.price ? icons.price : '€';
 
                 summaryHtml += `
