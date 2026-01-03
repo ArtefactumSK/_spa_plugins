@@ -204,9 +204,10 @@
                 programHtml += `<div class="spa-program-icon-large">${programData.icon}</div>`;
             }
             
-            // Názov programu
+            // Názov programu s ikonou
             if (programData.title) {
-                programHtml += `<h4 class="spa-program-title">${programData.title}</h4>`;
+                const titleIcon = icons && icons.spa_program ? icons.spa_program : '';
+                programHtml += `<h4 class="spa-program-title">${titleIcon} ${programData.title}</h4>`;
             }
             
             // Obsah CPT (čistý WordPress content)
@@ -239,18 +240,6 @@
                         ${wizardData.city_name}
                     </li>`;
             }
-
-            // PROGRAM (len ak je vybraný)
-            if (wizardData.program_name) {
-                const spa_programIconSvg = icons && icons.spa_program ? icons.spa_program : '🎯';
-
-                summaryHtml += `
-                    <li class="spa-summary-item spa-summary-program">
-                        <span class="spa-summary-icon">${spa_programIconSvg}</span>
-                        ${wizardData.program_name}
-                    </li>`;
-            }
-
             // VEK s ikonou (načítanou z témy)
             if (wizardData.program_age) {
                 // Gramatika: 8+ = "rokov", 6-8 = "roky"
@@ -279,8 +268,8 @@
                         <span class="spa-summary-icon">${capacityIconSvg}</span>
                         <strong>${capacityFree}</strong> ${capacityLabel}
                     </li>`;
-            }
-            
+            }            
+           
             // CENA (len ak je vybraný program)
             if (price && wizardData.program_name) {
                 const priceIconSvg = icons && icons.price ? icons.price : '€';
@@ -294,8 +283,29 @@
                         ${priceFormatted}
                     </li>`;
             }
-
-
+            // VEKOVÝ ROZSAH (len v stave 2)
+            if (currentState === 2 && wizardData.program_name && data.program) {
+                const ageFrom = data.program.age_min;
+                const ageTo = data.program.age_max;
+                
+                let ageText = '';
+                
+                if (ageFrom && ageTo) {
+                    // Formát: 1,8–3 r.
+                    ageText = ageFrom.toString().replace('.', ',') + ' - ' + ageTo.toString().replace('.', ',') + ' r.';
+                } else if (ageFrom) {
+                    // Formát: 10+ r.
+                    ageText = ageFrom.toString().replace('.', ',') + '+ r.';
+                }
+                
+                if (ageText) {
+                    summaryHtml += `
+                        <li class="spa-summary-item spa-summary-age-range">
+                            <div class="spa-age-range-text">${ageText}</div>
+                        </li>`;
+                }
+            }
+            /* sumarizacia kontajneru - koniec */
             summaryHtml += '</ul>';
 
             summaryDiv.innerHTML = summaryHtml;
