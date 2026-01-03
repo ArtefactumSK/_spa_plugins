@@ -255,8 +255,8 @@ function spa_ajax_get_infobox_content() {
                     'title' => $program_post->post_title,
                     'content' => apply_filters('the_content', $program_post->post_content),
                     'icon' => $icon_svg,
-                    'primary_color' => get_post_meta($program_id, 'spa_primary_color', true),
-                    'secondary_color' => get_post_meta($program_id, 'spa_secondary_color', true)
+                    'age_min' => get_post_meta($program_id, 'spa_age_from', true),
+                    'age_max' => get_post_meta($program_id, 'spa_age_to', true)
                 ];
             }
         }
