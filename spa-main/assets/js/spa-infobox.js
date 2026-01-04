@@ -441,7 +441,7 @@ function renderFrequencySelector(programData) {
         return;
     }
     // START: Reset frekvencie ak nie je program
-    if (!programData || currentState < 2) {
+    if (!programData) {
         selector.innerHTML = '';
         return;
     }
