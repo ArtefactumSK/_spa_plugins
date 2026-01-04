@@ -422,8 +422,14 @@ function spa_ajax_get_infobox_content() {
             'program_id' => $program_id ?? 'NULL',
             'program_name' => $program_name,
             'capacity_total' => $capacity_total ?? 'NULL',
-            'registered_active' => $registered_active ?? 'NULL'
+            'registered_active' => $registered_active ?? 'NULL',
+            'state' => $state,
+            'icons_keys' => array_keys($icons),
+            'spa_logo_exists' => isset($icons['spa_logo']),
+            'spa_logo_length' => isset($icons['spa_logo']) ? strlen($icons['spa_logo']) : 0,
+            'spa_logo_preview' => isset($icons['spa_logo']) ? substr($icons['spa_logo'], 0, 100) : 'NONE'
         ]);
+        // === KONIEC DEBUG ===
 
 
                 wp_send_json_success([
@@ -487,7 +493,7 @@ function spa_get_infobox_icons($state) {
             $icons['capacity'] = spa_icon('capacity', 'spa-icon-capacity', $options);
             
             // SPA logo (nad ikonou programu)
-            $icons['spa_logo'] = spa_icon('spa_logo', 'spa-logo-small', $options);
+            $icons['spa_logo'] = spa_icon('spa-icon', 'spa-logo-small', $options);
             break;
     }
     
