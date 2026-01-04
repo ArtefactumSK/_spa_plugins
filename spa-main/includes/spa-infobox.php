@@ -277,6 +277,27 @@ function spa_ajax_get_infobox_content() {
                     'age_min' => get_post_meta($program_id, 'spa_age_from', true),
                     'age_max' => get_post_meta($program_id, 'spa_age_to', true)
                 ];
+
+                // === NOVÝ BLOK – ÚDAJE MIESTA ===
+                $place_data = null;
+                if ($program_id) {
+                    // Získaj place_id z programu
+                    $place_id = get_post_meta($program_id, 'spa_place_id', true);
+                    
+                    if ($place_id) {
+                        $place_post = get_post($place_id);
+                        
+                        if ($place_post && $place_post->post_status === 'publish') {
+                            $place_data = [
+                                'name' => get_post_meta($place_id, 'spa_place_name', true),
+                                'street' => get_post_meta($place_id, 'spa_place_street', true),
+                                'zip' => get_post_meta($place_id, 'spa_place_zip', true),
+                                'city' => get_post_meta($place_id, 'spa_place_city', true),
+                            ];
+                        }
+                    }
+                }
+                // === KONIEC NOVÉHO BLOKU ===
             }
         }
         // Výpočet kapacity
@@ -432,13 +453,14 @@ function spa_ajax_get_infobox_content() {
         // === KONIEC DEBUG ===
 
 
-                wp_send_json_success([
-                    'content' => $content,
-                    'icons' => $icons,
-                    'capacity_free' => $capacity_free,
-                    'price' => $price_label,
-                    'program' => $program_data,
-                ]);
+        wp_send_json_success([
+            'content' => $content,
+            'icons' => $icons,
+            'capacity_free' => $capacity_free,
+            'price' => $price_label,
+            'program' => $program_data,
+            'place' => $place_data,
+        ]);
 }
 
 /**

@@ -244,13 +244,25 @@
 
             // MESTO s inline ikonou
             if (wizardData.city_name) {
-                // Získaj location ikonu z už renderovaných ikon
                 const locationIcon = icons && icons.location ? icons.location : '';
+                
+                // Zostaviť celú adresu z placeData (ak existuje)
+                let locationText = wizardData.city_name;
+                
+                if (data.place) {
+                    const parts = [wizardData.city_name];
+                    if (data.place.name) parts.push(data.place.name);
+                    if (data.place.street) parts.push(data.place.street);
+                    if (data.place.zip && data.place.city) {
+                        parts.push(data.place.zip + ' ' + data.place.city);
+                    }
+                    locationText = parts.filter(Boolean).join(', ');
+                }
                 
                 summaryHtml += `
                     <li class="spa-summary-item spa-summary-city">
                         <span class="spa-summary-icon">${locationIcon}</span>
-                        ${wizardData.city_name}
+                        ${locationText}
                     </li>`;
             }
             // VEK s ikonou (načítanou z témy)
