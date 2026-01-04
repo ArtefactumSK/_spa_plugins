@@ -278,6 +278,13 @@ function spa_ajax_get_infobox_content() {
                     'age_min' => get_post_meta($program_id, 'spa_age_from', true),
                     'age_max' => get_post_meta($program_id, 'spa_age_to', true)
                 ];
+                // START: SPA frequency meta
+                $program_data['spa_price_1x_weekly'] = get_post_meta($program_id, 'spa_price_1x_weekly', true);
+                $program_data['spa_price_2x_weekly'] = get_post_meta($program_id, 'spa_price_2x_weekly', true);
+                $program_data['spa_price_monthly'] = get_post_meta($program_id, 'spa_price_monthly', true);
+                $program_data['spa_price_semester'] = get_post_meta($program_id, 'spa_price_semester', true);
+                $program_data['spa_external_surcharge'] = get_post_meta($program_id, 'spa_external_surcharge', true);
+                // END: SPA frequency meta
 
                 // === NOVÝ BLOK – ÚDAJE MIESTA ===                
                 if ($program_id) {

@@ -280,8 +280,14 @@
                 </li>`;
             }
 
+            if (currentState === 2 && programData) {
+                renderFrequencySelector(programData);
+            } else {
+                // Explicitný reset pre state 0/1
+                renderFrequencySelector(null);
+            }
             // KAPACITA (len v stave 2)
-            if (currentState === 2 && wizardData.program_name && capacityFree !== null && capacityFree !== undefined) {            
+            if (currentState === 2 && wizardData.program_name && capacityFree !== null && capacityFree !== undefined) {                
 
                 const capacityIconSvg = icons && icons.capacity
                     ? icons.capacity
@@ -423,5 +429,106 @@
             }, 100);
         }
     }
+    // START: SPA frequency logic
+/**
+ * Renderovanie frekvenčného selektora
+ */
+function renderFrequencySelector(programData) {
+    const selector = document.querySelector('.spa-frequency-selector');
+    
+    if (!selector) {
+        console.warn('[SPA Frequency] Selector .spa-frequency-selector nebol nájdený');
+        return;
+    }
+    // START: Reset frekvencie ak nie je program
+    if (!programData || currentState < 2) {
+        selector.innerHTML = '';
+        return;
+    }
+    // Vyčisti obsah
+    selector.innerHTML = '';
+    
+    // Definícia frekvencií
+    const frequencies = [
+        { key: 'spa_price_1x_weekly', label: '1× týždenne' },
+        { key: 'spa_price_2x_weekly', label: '2× týždenne' },
+        { key: 'spa_price_monthly', label: 'Mesačný paušál' },
+        { key: 'spa_price_semester', label: 'Cena za semester' }
+    ];
+    
+    // Surcharge
+    const surcharge = programData.spa_external_surcharge || '';
+    
+    // Zozbieraj aktívne frekvencie
+    const activeFrequencies = [];
+    
+    frequencies.forEach(freq => {
+        const priceRaw = programData[freq.key];
+        
+        // Kontrola či je cena platná
+        if (!priceRaw || priceRaw === '0' || priceRaw === 0) {
+            return; // Preskočiť
+        }
+        
+        let finalPrice = parseFloat(priceRaw);
+        
+        // Aplikuj surcharge
+        if (surcharge) {
+            if (String(surcharge).includes('%')) {
+                // Percentuálna úprava
+                const percent = parseFloat(surcharge);
+                finalPrice = finalPrice * (1 + percent / 100);
+            } else {
+                // Pevná suma
+                finalPrice += parseFloat(surcharge);
+            }
+        }
+        
+        // Zaokrúhli na 2 desatinné miesta
+        finalPrice = Math.round(finalPrice * 100) / 100;
+        
+        activeFrequencies.push({
+            key: freq.key,
+            label: freq.label,
+            price: finalPrice
+        });
+    });
+    
+    // Ak nie je žiadna aktívna frekvencia
+    if (activeFrequencies.length === 0) {
+        const disabledOption = document.createElement('label');
+        disabledOption.className = 'spa-frequency-option spa-frequency-disabled';
+        disabledOption.innerHTML = `
+            <input type="radio" disabled>
+            <span>Pre tento program nie je dostupná platná frekvencia</span>
+        `;
+        selector.appendChild(disabledOption);
+        return;
+    }
+    
+    // Renderuj aktívne frekvencie
+    activeFrequencies.forEach((freq, index) => {
+        const label = document.createElement('label');
+        label.className = 'spa-frequency-option';
+        
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'spa_frequency';
+        input.value = freq.key;
+        
+        // Automatické predvybratie ak je len jedna možnosť
+        if (activeFrequencies.length === 1) {
+            input.checked = true;
+        }
+        
+        const span = document.createElement('span');
+        span.textContent = `${freq.label} – ${freq.price.toFixed(2).replace('.', ',')} €`;
+        
+        label.appendChild(input);
+        label.appendChild(span);
+        selector.appendChild(label);
+    });
+}
+// END: SPA frequency logic
 
 })();
