@@ -309,10 +309,40 @@
                 }
                 
                 if (ageText) {
-                    summaryHtml += `
-                        <li class="spa-summary-item spa-summary-age-range">
-                            <div class="spa-age-range-text">${ageText}</div>
-                        </li>`;
+                    // Po vykreslení summary boxu (po .innerHTML = summaryHtml), presúvať pomocou setTimeout(…, 0)
+                    setTimeout(function() {
+                        const iconLarge = container.querySelector('.spa-program-icon-large');
+                        if (iconLarge) {
+                            // Najprv zisti, či tam už .spa-age-range-text je
+                            if (!iconLarge.querySelector('.spa-age-range-text')) {
+                                // Najprv over, či niekde v SPA Infoboxe je už .spa-age-range-text (napr. v summary)
+                                let ageRangeText = container.querySelector('.spa-age-range-text');
+                                
+                                // Ak existuje v summary (li), vyber ju odtiaľ a použijeme existujúci element
+                                if (ageRangeText) {
+                                    ageRangeText.parentElement.removeChild(ageRangeText);
+                                } else {
+                                    // Ak nie, vytvor nový element (pre bezpečnosť)
+                                    ageRangeText = document.createElement('div');
+                                    ageRangeText.className = 'spa-age-range-text';
+                                    ageRangeText.textContent = ageText;
+                                }
+                                // Presuň/vlož do správneho miesta - hneď za SVG
+                                // Nájdeme SVG vo vnútri .spa-program-icon-large
+                                const svg = iconLarge.querySelector('svg');
+                                if (svg) {
+                                    if (svg.nextSibling) {
+                                        iconLarge.insertBefore(ageRangeText, svg.nextSibling);
+                                    } else {
+                                        iconLarge.appendChild(ageRangeText);
+                                    }
+                                } else {
+                                    // fallback: vlož na koniec, ak SVG neexistuje
+                                    iconLarge.appendChild(ageRangeText);
+                                }
+                            }
+                        }
+                    }, 0);
                 }
             }
             /* sumarizacia kontajneru - koniec */
