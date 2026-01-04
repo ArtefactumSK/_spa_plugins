@@ -289,9 +289,8 @@ function spa_ajax_get_infobox_content() {
                         
                         if ($place_post && $place_post->post_status === 'publish') {
                             $place_data = [
-                                'name' => get_post_meta($place_id, 'spa_place_name', true),
-                                'street' => get_post_meta($place_id, 'spa_place_street', true),
-                                'zip' => get_post_meta($place_id, 'spa_place_zip', true),
+                                'name' => $place_post->post_title,
+                                'address' => get_post_meta($place_id, 'spa_place_address', true),
                                 'city' => get_post_meta($place_id, 'spa_place_city', true),
                             ];
                         }

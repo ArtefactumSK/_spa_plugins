@@ -246,17 +246,17 @@
             if (wizardData.city_name) {
                 const locationIcon = icons && icons.location ? icons.location : '';
                 
-                // Zostaviť celú adresu z placeData (ak existuje)
                 let locationText = wizardData.city_name;
                 
-                if (data.place) {
-                    const parts = [wizardData.city_name];
-                    if (data.place.name) parts.push(data.place.name);
-                    if (data.place.street) parts.push(data.place.street);
-                    if (data.place.zip && data.place.city) {
-                        parts.push(data.place.zip + ' ' + data.place.city);
-                    }
-                    locationText = parts.filter(Boolean).join(', ');
+                if (data.place && currentState === 2) {
+                    const addressParts = [];
+                    if (data.place.name) addressParts.push(data.place.name);
+                    if (data.place.address) addressParts.push(data.place.address);
+                    
+                    const cityPart = data.place.city ? `<strong>${data.place.city}</strong>` : wizardData.city_name;
+                    const addressText = addressParts.filter(Boolean).join(', ');
+                    
+                    locationText = addressText ? `${cityPart} • ${addressText}` : cityPart;
                 }
                 
                 summaryHtml += `
