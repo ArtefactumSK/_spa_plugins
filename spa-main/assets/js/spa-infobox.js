@@ -262,10 +262,10 @@
                 const ageIconSvg = icons && icons.age ? icons.age : '<span class="spa-icon-placeholder">👶</span>';
                 
                 summaryHtml += `
-                    <li class="spa-summary-item spa-summary-age">
-                        <span class="spa-summary-icon">${ageIconSvg}</span>
-                        <strong style="color: var(--program-primary-color, inherit);">${wizardData.program_age}</strong> ${ageLabel}
-                    </li>`;
+                <li class="spa-summary-item spa-summary-age">
+                    <span class="spa-summary-icon">${ageIconSvg}</span>
+                    <strong>${wizardData.program_age}</strong> ${ageLabel}
+                </li>`;
             }
 
             // KAPACITA (len v stave 2)
@@ -288,16 +288,7 @@
             // RIEŠENIE: fallback na <span>€</span> ak svg neprišlo, ale HLAVNÝ problém treba opraviť v PHP (pozri nižšie JS komentáre)
 
             if (price && wizardData.program_name) {
-                let priceIconSvg = '€';
-                // icons.price je undefined ak PHP ho negeneruje do pola $icons. Ostatné (location/capacity) tam sú, price nie.
-                // Odporúčaná oprava (PHP): do funkcie spa_get_infobox_icons() pridať riadok pre 'price' v stave 2:
-                // $icons['price'] = spa_icon('price', 'spa-icon-price', $options);
-                // Pokiaľ to v JS nie je, fallbackuj na €
-                if (icons && icons.price && typeof icons.price === 'string' && icons.price.trim().startsWith('<svg')) {
-                    priceIconSvg = icons.price;
-                } else {
-                    priceIconSvg = '<span class="spa-icon-placeholder">€</span>';
-                }
+                const priceIconSvg = icons && icons.price ? icons.price : '<span class="spa-icon-placeholder">€</span>';
                 
                 // Rozdeľ cenu a kontext (napr. "130 € / 2× týždenne")
                 const priceFormatted = price.replace(/(\d+\s*€)/g, '<strong>$1</strong>');
