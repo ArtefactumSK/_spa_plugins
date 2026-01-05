@@ -124,17 +124,19 @@
                 
                 if (this.value && this.value !== '0') {
                     wizardData.city_name = selectedOption.text;
+                    currentState = 1;
                     window.spaFormState.city = true;
                 } else {
                     wizardData.city_name = '';
                     wizardData.program_name = '';
                     wizardData.program_id = null;
                     wizardData.program_age = '';
+                    currentState = 0;
                     window.spaFormState.city = false;
                     window.spaFormState.program = false;
                     window.spaFormState.frequency = false;
                 }
-                
+                loadInfoboxContent(currentState);
                 updateInfoboxState();
                 updateNextButtonState();
             });
@@ -157,29 +159,32 @@
                     wizardData.program_name = selectedOption.text;
                     wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
                     window.spaFormState.program = true;
-                    window.spaFormState.frequency = false; // reset frekvencie
                     
                     console.log('[SPA Infobox] Program ID:', wizardData.program_id);
                     
-                    const ageRangeMatch = selectedOption.text.match(/(\d+(?:,\d+)?)\s*[–-]\s*(\d+(?:,\d+)?)/);
-                    if (ageRangeMatch) {
-                        wizardData.program_age = ageRangeMatch[1] + ' - ' + ageRangeMatch[2];
+                    const ageMatch = selectedOption.text.match(/(\d+(?:,\d+)?)\s*[–-]\s*(\d+(?:,\d+)?)/);
+                    if (ageMatch) {
+                        wizardData.program_age = ageMatch[1] + ' - ' + ageMatch[2];
                     } else {
                         const agePlusMatch = selectedOption.text.match(/(\d+(?:,\d+)?)\+/);
                         if (agePlusMatch) {
                             wizardData.program_age = agePlusMatch[1] + '+';
-                        } else {
-                            wizardData.program_age = '';
                         }
                     }
+
+                    console.log('[SPA Infobox] Parsed program_age:', wizardData.program_age);
+                    
+                    currentState = 2;
+                    console.log('[SPA Infobox] State changed to 2, wizardData:', wizardData);
                 } else {
                     wizardData.program_name = '';
                     wizardData.program_id = null;
                     wizardData.program_age = '';
                     window.spaFormState.program = false;
                     window.spaFormState.frequency = false;
+                    currentState = wizardData.city_name ? 1 : 0;
                 }
-                
+                loadInfoboxContent(currentState);
                 updateInfoboxState();
                 updateNextButtonState();
             });
@@ -574,6 +579,7 @@ function renderInfobox(data, icons, capacityFree, price) {
             
             if (activeFrequencies.length === 1) {
                 input.checked = true;
+                window.spaFormState.frequency = true;
             }
             
             const span = document.createElement('span');
@@ -598,18 +604,17 @@ function renderInfobox(data, icons, capacityFree, price) {
                 }
             }
         }, 50);
-        // Listener na zmenu frekvencie
-        activeFrequencies.forEach((freq) => {
-            const radioInput = selector.querySelector(`input[value="${freq.key}"]`);
-            if (radioInput) {
-                radioInput.addEventListener('change', function() {
-                    if (this.checked) {
-                        window.spaFormState.frequency = true;
-                        updateNextButtonState();
-                    }
-                });
+        /**
+         * Kontrola stavu pri page load
+         */
+        setTimeout(() => {
+            const nextButton = document.querySelector('.gform_next_button');
+            if (!nextButton) return;
+            
+            if (!window.spaFormState.city) {
+                nextButton.style.display = 'none';
             }
-        });
+        }, 500);
     }
 
    /**
