@@ -362,6 +362,15 @@
                     wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
                     window.spaFormState.program = true;
                     
+                    // BACKUP do hidden field
+                    const backupField = document.querySelector(`[name="${spaConfig.fields.spa_program_backup}"]`);
+                    if (backupField) {
+                        backupField.value = this.value;
+                        console.log('[SPA Backup] Program backup set:', this.value);
+                    } else {
+                        console.error('[SPA Backup] Program backup field NOT FOUND!');
+                    }
+                    
                     console.log('[SPA Infobox] Program ID:', wizardData.program_id);
                     
                     // Parsuj vek z názvu programu
@@ -385,6 +394,12 @@
                     window.spaFormState.program = false;
                     window.spaFormState.frequency = false;
                     currentState = wizardData.city_name ? 1 : 0;
+                    
+                    // Vyčisti backup
+                    const backupField = document.querySelector(`[name="${spaConfig.fields.spa_program_backup}"]`);
+                    if (backupField) {
+                        backupField.value = '';
+                    }
                 }
                 
                 loadInfoboxContent(currentState);
