@@ -130,34 +130,58 @@
      * Obnovenie wizardData z hidden backup polí
      */
     function restoreWizardData() {
-        // Načítaj z backup hidden polí
+        console.log('[SPA Restore] START - checking form state');
+        
+        // Zisti, či sme na stránke 2 (po page break)
+        const currentPage = document.querySelector('.gform_page_footer .gform_previous_button');
+        if (!currentPage) {
+            console.log('[SPA Restore] Still on page 1, skipping restore');
+            return;
+        }
+        
+        // Načítaj hodnoty z hidden backup polí
         const cityBackup = document.querySelector(`[name="${spaConfig.fields.spa_city_backup}"]`);
         const programBackup = document.querySelector(`[name="${spaConfig.fields.spa_program_backup}"]`);
         
+        console.log('[SPA Restore] Backup fields:', {
+            cityBackupValue: cityBackup?.value,
+            programBackupValue: programBackup?.value
+        });
+        
+        // Obnov mesto
         if (cityBackup && cityBackup.value) {
-            // Nájdi mesto select a zisti názov
             const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-            if (citySelect && citySelect.value) {
-                const selectedOption = citySelect.options[citySelect.selectedIndex];
-                wizardData.city_name = selectedOption ? selectedOption.text : '';
-                window.spaFormState.city = true;
-                currentState = 1;
+            
+            if (citySelect) {
+                // Nastav hodnotu selectu
+                citySelect.value = cityBackup.value;
                 
-                console.log('[SPA Restore] City restored:', wizardData.city_name);
+                const selectedOption = citySelect.options[citySelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    wizardData.city_name = selectedOption.text;
+                    window.spaFormState.city = true;
+                    currentState = 1;
+                    
+                    console.log('[SPA Restore] City restored:', wizardData.city_name);
+                }
             }
         }
         
+        // Obnov program
         if (programBackup && programBackup.value) {
-            // Nájdi program select a zisti názov
             const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
-            if (programSelect && programSelect.value) {
-                const selectedOption = programSelect.options[programSelect.selectedIndex];
-                wizardData.program_name = selectedOption ? selectedOption.text : '';
-                wizardData.program_id = selectedOption ? (selectedOption.getAttribute('data-program-id') || selectedOption.value) : null;
-                window.spaFormState.program = true;
+            
+            if (programSelect) {
+                // Nastav hodnotu selectu
+                programSelect.value = programBackup.value;
                 
-                // Parsuj vek
-                if (selectedOption) {
+                const selectedOption = programSelect.options[programSelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    wizardData.program_name = selectedOption.text;
+                    wizardData.program_id = selectedOption.getAttribute('data-program-id') || selectedOption.value;
+                    window.spaFormState.program = true;
+                    
+                    // Parsuj vek
                     const ageMatch = selectedOption.text.match(/(\d+)[–-](\d+)/);
                     if (ageMatch) {
                         wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
@@ -167,20 +191,22 @@
                             wizardData.program_age = agePlusMatch[1] + '+';
                         }
                     }
+                    
+                    currentState = 2;
+                    
+                    console.log('[SPA Restore] Program restored:', wizardData.program_name);
                 }
-                
-                currentState = 2;
-                
-                console.log('[SPA Restore] Program restored:', wizardData.program_name);
             }
         }
         
         // Ak sú dáta obnovené, načítaj infobox
         if (currentState > 0) {
+            console.log('[SPA Restore] Loading infobox for state:', currentState);
             loadInfoboxContent(currentState);
+            updatePageBreakVisibility();
         }
         
-        console.log('[SPA Restore] State after restore:', {
+        console.log('[SPA Restore] DONE:', {
             currentState,
             wizardData,
             spaFormState: window.spaFormState
