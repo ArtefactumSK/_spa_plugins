@@ -39,6 +39,12 @@
         jQuery(document).on('gform_post_render', function() {
             initInfobox();
             watchFormChanges();
+            
+            // KRITICKÉ: Obnov wizardData po page break
+            setTimeout(() => {
+                restoreWizardData();
+                updatePageBreakVisibility();
+            }, 300);
         });
     }
 
@@ -120,6 +126,66 @@
         console.log('[SPA Infobox] Inicializovaný.');
  }
 
+    /**
+     * Obnovenie wizardData z hidden backup polí
+     */
+    function restoreWizardData() {
+        // Načítaj z backup hidden polí
+        const cityBackup = document.querySelector(`[name="${spaConfig.fields.spa_city_backup}"]`);
+        const programBackup = document.querySelector(`[name="${spaConfig.fields.spa_program_backup}"]`);
+        
+        if (cityBackup && cityBackup.value) {
+            // Nájdi mesto select a zisti názov
+            const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
+            if (citySelect && citySelect.value) {
+                const selectedOption = citySelect.options[citySelect.selectedIndex];
+                wizardData.city_name = selectedOption ? selectedOption.text : '';
+                window.spaFormState.city = true;
+                currentState = 1;
+                
+                console.log('[SPA Restore] City restored:', wizardData.city_name);
+            }
+        }
+        
+        if (programBackup && programBackup.value) {
+            // Nájdi program select a zisti názov
+            const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+            if (programSelect && programSelect.value) {
+                const selectedOption = programSelect.options[programSelect.selectedIndex];
+                wizardData.program_name = selectedOption ? selectedOption.text : '';
+                wizardData.program_id = selectedOption ? (selectedOption.getAttribute('data-program-id') || selectedOption.value) : null;
+                window.spaFormState.program = true;
+                
+                // Parsuj vek
+                if (selectedOption) {
+                    const ageMatch = selectedOption.text.match(/(\d+)[–-](\d+)/);
+                    if (ageMatch) {
+                        wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                    } else {
+                        const agePlusMatch = selectedOption.text.match(/(\d+)\+/);
+                        if (agePlusMatch) {
+                            wizardData.program_age = agePlusMatch[1] + '+';
+                        }
+                    }
+                }
+                
+                currentState = 2;
+                
+                console.log('[SPA Restore] Program restored:', wizardData.program_name);
+            }
+        }
+        
+        // Ak sú dáta obnovené, načítaj infobox
+        if (currentState > 0) {
+            loadInfoboxContent(currentState);
+        }
+        
+        console.log('[SPA Restore] State after restore:', {
+            currentState,
+            wizardData,
+            spaFormState: window.spaFormState
+        });
+    }
     /**
  * Ovládanie viditeľnosti GF page break
  */
