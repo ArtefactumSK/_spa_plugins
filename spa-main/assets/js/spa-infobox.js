@@ -111,32 +111,32 @@
  * Ovládanie viditeľnosti GF page break
  */
     function updatePageBreakVisibility() {
-        // Nájdi všetky page break tlačidlá (GF generuje class .gform_next_button)
         const pageBreakButtons = document.querySelectorAll('.gform_page_footer .gform_next_button');
         
-        // Podmienka: mesto A program MUSIA byť vybrané
-        const citySelected = wizardData.city_name && wizardData.city_name !== '';
-        const programSelected = wizardData.program_id && wizardData.program_id !== '';
-        
-        // Aktivuj/deaktivuj tlačidlo
-        const shouldEnable = citySelected && programSelected;
+        // PODMIENKA: mesto + program + frekvencia
+        const isComplete = window.spaFormState.city && 
+                          window.spaFormState.program && 
+                          window.spaFormState.frequency;
         
         pageBreakButtons.forEach(btn => {
-            if (shouldEnable) {
+            if (isComplete) {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 btn.style.pointerEvents = 'auto';
+                btn.style.cursor = 'pointer';
             } else {
                 btn.disabled = true;
                 btn.style.opacity = '0.5';
                 btn.style.pointerEvents = 'none';
+                btn.style.cursor = 'not-allowed';
             }
         });
         
-        console.log('[SPA Infobox] Page break state:', {
-            citySelected,
-            programSelected,
-            enabled: shouldEnable
+        console.log('[SPA Page Break]', {
+            city: window.spaFormState.city,
+            program: window.spaFormState.program,
+            frequency: window.spaFormState.frequency,
+            enabled: isComplete
         });
     }
     /**
@@ -151,6 +151,7 @@
                 
                 if (this.value && this.value !== '0') {
                     wizardData.city_name = selectedOption.text;
+                    window.spaFormState.city = true;
                     currentState = 1;
                 } else {
                     // ÚPLNÝ RESET
@@ -158,6 +159,9 @@
                     wizardData.program_name = '';
                     wizardData.program_id = null;
                     wizardData.program_age = '';
+                    window.spaFormState.city = false;
+                    window.spaFormState.program = false;
+                    window.spaFormState.frequency = false;
                     currentState = 0;
                     
                     // Vyčisti program select
@@ -168,7 +172,7 @@
                 }
                 
                 loadInfoboxContent(currentState);
-                updatePageBreakVisibility(); // ← PRIDANÉ
+                updatePageBreakVisibility();
             });
         }
         
@@ -188,6 +192,7 @@
                 if (this.value) {
                     wizardData.program_name = selectedOption.text;
                     wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
+                    window.spaFormState.program = true;
                     
                     console.log('[SPA Infobox] Program ID:', wizardData.program_id);
                     
@@ -209,12 +214,13 @@
                     wizardData.program_name = '';
                     wizardData.program_id = null;
                     wizardData.program_age = '';
+                    window.spaFormState.program = false;
+                    window.spaFormState.frequency = false;
                     currentState = wizardData.city_name ? 1 : 0;
                 }
                 
                 loadInfoboxContent(currentState);
-                updatePageBreakVisibility(); // ← PRIDANÉ
-                updateNextButtonState();
+                updatePageBreakVisibility();
             });
         } else {
             console.error('[SPA Infobox] Program field NOT FOUND!');
@@ -610,6 +616,15 @@ function renderInfobox(data, icons, capacityFree, price) {
                 window.spaFormState.frequency = true;
             }
             
+            // EVENT LISTENER na zmenu frekvencie
+            input.addEventListener('change', function() {
+                if (this.checked) {
+                    window.spaFormState.frequency = true;
+                    updatePageBreakVisibility();
+                    console.log('[SPA Frequency] Selected:', this.value);
+                }
+            });
+            
             const span = document.createElement('span');
             span.textContent = `${freq.label} – ${freq.price.toFixed(2).replace('.', ',')} €`;
             
@@ -617,6 +632,7 @@ function renderInfobox(data, icons, capacityFree, price) {
             label.appendChild(span);
             selector.appendChild(label);
         });
+
         // Skry/zobraz label poľa podľa počtu frekvencií
         setTimeout(() => {
             const gfieldRadio = document.querySelector('.gfield--type-radio');
@@ -643,6 +659,11 @@ function renderInfobox(data, icons, capacityFree, price) {
                 nextButton.style.display = 'none';
             }
         }, 500);
+        // Aktualizuj stav page break po renderi frekvencie
+        if (activeFrequencies.length === 1) {
+            // Ak je len 1 frekvencia, je automaticky vybraná
+            updatePageBreakVisibility();
+        }
     }
 
    /**
