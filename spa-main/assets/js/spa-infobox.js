@@ -980,7 +980,7 @@ function renderInfobox(data, icons, capacityFree, price) {
             console.log('[SPA Section Control] Guardian section:', isChild ? 'VISIBLE (child)' : 'HIDDEN (adult)');
         }
         // SEKCIA 3: RODNÉ ČÍSLO (enable/disable podľa typu)
-        const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="birth_number"], input[placeholder*="rodné číslo"]');
+        const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="spa_member_birthdate"], input[placeholder*="rodné číslo"]');
 
         if (birthNumberField) {
             // Zisti aktuálnu hodnotu spa_registration_type
