@@ -460,14 +460,16 @@ function renderInfobox(data, icons, capacityFree, price) {
         return;
     }
 
+    // Vyčisti kontajner - OKREM loadera - Ulož programData do global scope
+    window.spaCurrentProgramData = programData;
+
     // Vyčisti kontajner - OKREM loadera
-    const existingLoader = document.getElementById('spa-infobox-loader');
     Array.from(container.children).forEach(child => {
         if (child.id !== 'spa-infobox-loader') {
             child.remove();
         }
-    window.spaCurrentProgramData = programData;   
     });
+    
 
    /* ==================================================
     1. OBSAH – WP stránka (SPA Infobox Wizard)
