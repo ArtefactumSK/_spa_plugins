@@ -1049,18 +1049,39 @@ function renderInfobox(data, icons, capacityFree, price) {
      */
     function toggleSection(sectionElement, show) {
         if (!sectionElement) return;
-
+    
         sectionElement.style.display = show ? 'block' : 'none';
-
+    
         let nextElement = sectionElement.nextElementSibling;
-
+    
         while (nextElement) {
             if (nextElement.classList.contains('gfield--type-section')) {
                 break;
             }
-
+    
+            // Zobraz/skry element
             nextElement.style.display = show ? 'block' : 'none';
+            
+            // ⭐ ENABLE/DISABLE všetky polia v elemente
+            if (show) {
+                // Pri zobrazení ENABLE všetky polia
+                const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.opacity = '1';
+                    input.style.pointerEvents = 'auto';
+                });
+            } else {
+                // Pri skrytí DISABLE všetky polia
+                const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                });
+            }
+            
             nextElement = nextElement.nextElementSibling;
         }
+        
+        console.log('[SPA toggleSection]', show ? 'ENABLED' : 'DISABLED', 'fields in section');
     }    
 })();
