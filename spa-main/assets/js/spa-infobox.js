@@ -557,28 +557,63 @@ function renderInfobox(data, icons, capacityFree, price) {
         if (programData.content) {
             programHtml += `<div class="spa-program-content">${programData.content}</div>`;
         }
-        // AUTOMATICKÉ OZNAČENIE TYPU ÚČASTNÍKA podľa veku programu
-        if (programData.age_max && programData.age_max < 18) {
-            // Program je pre deti - označ "Dieťa"
+        // ⭐ PRIAME OVLÁDANIE NA ZÁKLADE VEKU PROGRAMU (bez spoliehania sa na GF conditional logic)
             setTimeout(() => {
+                const isChild = programData.age_max && programData.age_max < 18;
+                
+                console.log('[SPA Program Type] Age-based detection:', {
+                    age_min: programData.age_min,
+                    age_max: programData.age_max,
+                    isChild: isChild
+                });
+                
+                // 1. Označ správny radio button
                 const childRadio = document.querySelector('input[name="input_14"][value*="Dieťa"], input[name="input_14"]:first-of-type');
-                if (childRadio && !childRadio.checked) {
-                    childRadio.checked = true;
-                    console.log('[SPA Auto-select] Child option selected for age < 18');
-                    updateSectionVisibility();
-                }
-            }, 500);
-        } else if (programData.age_min && programData.age_min >= 18) {
-            // Program je pre dospelých - označ "Dospelá osoba"
-            setTimeout(() => {
                 const adultRadio = document.querySelector('input[name="input_14"][value*="Dospelá"], input[name="input_14"]:last-of-type');
-                if (adultRadio && !adultRadio.checked) {
+                
+                if (isChild && childRadio) {
+                    childRadio.checked = true;
+                    if (adultRadio) adultRadio.checked = false;
+                    console.log('[SPA Program Type] Child radio selected');
+                } else if (!isChild && adultRadio) {
                     adultRadio.checked = true;
-                    console.log('[SPA Auto-select] Adult option selected for age >= 18');
-                    updateSectionVisibility();
+                    if (childRadio) childRadio.checked = false;
+                    console.log('[SPA Program Type] Adult radio selected');
                 }
+                
+                // 2. ZOBRAZ/SKRY titulku "Kto bude účastníkom tréningov?"
+                const registrationTypeSection = document.querySelector('.gfield--input-type-radio .gfield_label');
+                if (registrationTypeSection) {
+                    registrationTypeSection.style.display = 'block'; // Vždy zobraz
+                    console.log('[SPA Program Type] Registration type label: VISIBLE');
+                }
+                
+                // 3. ENABLE/DISABLE rodného čísla
+                const birthNumberField = document.querySelector('input[name="input_8"]');
+                if (birthNumberField) {
+                    if (isChild) {
+                        birthNumberField.disabled = false;
+                        birthNumberField.style.opacity = '1';
+                        birthNumberField.style.pointerEvents = 'auto';
+                        console.log('[SPA Program Type] Birth number: ENABLED (child program)');
+                    } else {
+                        birthNumberField.disabled = true;
+                        birthNumberField.value = '';
+                        birthNumberField.style.opacity = '0.5';
+                        birthNumberField.style.pointerEvents = 'none';
+                        console.log('[SPA Program Type] Birth number: DISABLED (adult program)');
+                    }
+                }
+                
+                // 4. ZOBRAZ/SKRY sekciu rodiča
+                const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
+                if (guardianSection) {
+                    toggleSection(guardianSection, isChild);
+                    console.log('[SPA Program Type] Guardian section:', isChild ? 'VISIBLE (child program)' : 'HIDDEN (adult program)');
+                }
+                
             }, 500);
-        }
+        
         programDiv.innerHTML = programHtml;
         container.appendChild(programDiv);
     }
