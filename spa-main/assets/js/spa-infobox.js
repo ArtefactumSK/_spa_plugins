@@ -298,7 +298,7 @@ function watchFormChanges() {
         console.log('[SPA Infobox] Listeners already attached, skipping');
         return;
     }
-    
+        
     // Sleduj zmenu mesta
     const cityField = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
     if (cityField) {
