@@ -85,10 +85,9 @@ add_action('plugins_loaded', 'spa_init', 5); // Priorita 5 = skoršie ako téma
  * Enqueue JavaScript pre Gravity Forms
  */
 function spa_enqueue_gf_scripts($form) {
-    // Načítanie field mappingu z spa-config
     $field_config = spa_load_field_config();
     
-    // Enqueue hlavného JS súboru
+    // Hlavný registration JS
     wp_enqueue_script(
         'spa-registration',
         SPA_PLUGIN_URL . 'assets/js/spa-registration-summary.js',
@@ -97,7 +96,7 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
-    // Enqueue infobox JS
+    // Infobox JS (neupravený)
     wp_enqueue_script(
         'spa-infobox',
         SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
@@ -106,16 +105,23 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
-    // Poskytnutie konfigurácie do JS
-    // Načítaj VŠETKY fieldy z configu
-    $js_fields = [];
-    foreach ($field_config as $key => $value) {
-        $js_fields[$key] = $value;
-    }
-
+    // ⭐ NOVÝ: GF wizard logic (oddelený)
+    wp_enqueue_script(
+        'spa-gf-wizard',
+        SPA_PLUGIN_URL . 'assets/js/spa-gf-wizard.js',
+        ['spa-registration'],
+        SPA_PLUGIN_VERSION,
+        true
+    );
+    
+    // Config pre JS
     wp_localize_script('spa-registration', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
-        'fields' => $js_fields,
+        'fields' => [
+            'spa_city' => $field_config['spa_city'] ?? '',
+            'spa_program' => $field_config['spa_program'] ?? '',
+            'spa_resolved_type' => $field_config['spa_resolved_type'] ?? '',
+        ],
         'nonce' => wp_create_nonce('spa_ajax_nonce'),
     ]);
 }
