@@ -227,43 +227,100 @@
     }
 
     /**
-     * Automatická voľba typu účastníka na základe programu
-     */
-    function handleParticipantTypeSelection(target) {
-        // Nájdi radio buttony pre typ účastníka
-        // GF používa typicky: input[name="input_X"][value="Y"]
+ * Automatická voľba typu účastníka + riadenie viditeľnosti emailových polí
+ */
+function handleParticipantTypeSelection(target) {
+    console.log('[SPA] handleParticipantTypeSelection called with target:', target);
+    
+    // 1. RADIO BUTTONY pre typ účastníka
+    const radioButtons = document.querySelectorAll('input[type="radio"][name*="input_14"]');
+    
+    radioButtons.forEach(radio => {
+        const label = radio.parentElement.textContent.trim().toLowerCase();
+        const isChildOption = label.includes('dieťa') || label.includes('diet') || label.includes('mladš');
+        const isAdultOption = label.includes('dospel') || label.includes('18+') || label.includes('adult');
         
-        // Predpokladáme, že GF má polia s hodnotami obsahujúcimi "Dieťa" a "Dospelá osoba"
-        const radioButtons = document.querySelectorAll('input[type="radio"]');
-        
-        radioButtons.forEach(radio => {
-            const label = radio.parentElement.textContent.trim().toLowerCase();
-            
-            // Detekcia typu na základe labelu
-            const isChildOption = label.includes('dieťa') || label.includes('diet') || label.includes('mladš');
-            const isAdultOption = label.includes('dospel') || label.includes('18+') || label.includes('adult');
-            
-            if (target === 'child') {
-                if (isChildOption) {
-                    radio.checked = true;
-                    radio.disabled = false;
-                } else if (isAdultOption) {
-                    radio.checked = false;
-                    radio.disabled = true;
-                }
-            } else if (target === 'adult') {
-                if (isAdultOption) {
-                    radio.checked = true;
-                    radio.disabled = false;
-                } else if (isChildOption) {
-                    radio.checked = false;
-                    radio.disabled = true;
-                }
-            } else if (target === 'mixed') {
-                // Oba povolené, žiadny disabled
+        if (target === 'child' || target === 'youth') {
+            if (isChildOption) {
+                radio.checked = true;
                 radio.disabled = false;
+            } else if (isAdultOption) {
+                radio.checked = false;
+                radio.disabled = true;
             }
-        });
+        } else if (target === 'adult') {
+            if (isAdultOption) {
+                radio.checked = true;
+                radio.disabled = false;
+            } else if (isChildOption) {
+                radio.checked = false;
+                radio.disabled = true;
+            }
+        }
+    });
+    
+    // 2. EMAILOVÉ POLIA – priame riadenie viditeľnosti
+    handleEmailFieldVisibility(target);
+}
+
+    /**
+     * Riadenie viditeľnosti emailových polí na základe veku programu
+     * CHILD/YOUTH → input_15 (auto-generovaný)
+     * ADULT → input_16 (povinný)
+     */
+    function handleEmailFieldVisibility(target) {
+        console.log('[SPA] handleEmailFieldVisibility called with target:', target);
+        
+        // Nájdi emailové inputy podľa name atribútu
+        const childEmailInput = document.querySelector('input[name="input_15"]');
+        const adultEmailInput = document.querySelector('input[name="input_16"]');
+        
+        if (!childEmailInput || !adultEmailInput) {
+            console.warn('[SPA] Email inputs not found in DOM');
+            return;
+        }
+        
+        // Získaj GF field wrappery (closest .gfield)
+        const childEmailWrapper = childEmailInput.closest('.gfield');
+        const adultEmailWrapper = adultEmailInput.closest('.gfield');
+        
+        if (!childEmailWrapper || !adultEmailWrapper) {
+            console.warn('[SPA] Email field wrappers not found');
+            return;
+        }
+        
+        // CHILD/YOUTH programy
+        if (target === 'child' || target === 'youth') {
+            // Zobraz CHILD pole (input_15)
+            childEmailWrapper.style.display = '';
+            childEmailWrapper.classList.remove('gfield_visibility_hidden');
+            childEmailInput.removeAttribute('disabled');
+            
+            // Skry ADULT pole (input_16)
+            adultEmailWrapper.style.display = 'none';
+            adultEmailWrapper.classList.add('gfield_visibility_hidden');
+            adultEmailInput.setAttribute('disabled', 'disabled');
+            adultEmailInput.removeAttribute('required');
+            adultEmailInput.setAttribute('aria-required', 'false');
+            
+            console.log('[SPA] CHILD email field visible, ADULT hidden');
+        }
+        // ADULT programy
+        else if (target === 'adult') {
+            // Skry CHILD pole (input_15)
+            childEmailWrapper.style.display = 'none';
+            childEmailWrapper.classList.add('gfield_visibility_hidden');
+            childEmailInput.setAttribute('disabled', 'disabled');
+            
+            // Zobraz ADULT pole (input_16)
+            adultEmailWrapper.style.display = '';
+            adultEmailWrapper.classList.remove('gfield_visibility_hidden');
+            adultEmailInput.removeAttribute('disabled');
+            adultEmailInput.setAttribute('required', 'required');
+            adultEmailInput.setAttribute('aria-required', 'true');
+            
+            console.log('[SPA] ADULT email field visible, CHILD hidden');
+        }
     }
 
     /**
