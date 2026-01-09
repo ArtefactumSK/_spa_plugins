@@ -355,7 +355,7 @@
         const registrationTypeField = document.querySelector('.gfield--input-type-radio');
         if (registrationTypeField) {
             registrationTypeField.style.display = 'none';
-            console.log('[SPA Init] Hidden: Registration type field (input_14)');
+            console.log('[SPA Init] Hidden: Registration type field (input_4)');
         }
         
         // ⭐ Skry EMAIL polia
@@ -508,8 +508,8 @@
             console.error('[SPA Infobox] Program field NOT FOUND!');
         }
 
-        // ⭐ Sleduj zmenu typu účastníka (input_14)
-        const registrationTypeRadios = document.querySelectorAll('input[name="input_14"]');
+        // ⭐ Sleduj zmenu typu účastníka (input_4)
+        const registrationTypeRadios = document.querySelectorAll('input[name="input_4"]');
         registrationTypeRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 console.log('[SPA] Registration type changed');
@@ -670,8 +670,8 @@ function renderInfobox(data, icons, capacityFree, price) {
             });
             
             // Pre-označ správny radio button (BEZ checked = bez trigger eventu)
-            const childRadio = document.querySelector('input[name="input_14"][value*="Dieťa"], input[name="input_14"]:first-of-type');
-            const adultRadio = document.querySelector('input[name="input_14"][value*="Dospelá"], input[name="input_14"]:last-of-type');
+            const childRadio = document.querySelector('input[name="input_4"][value*="Dieťa"], input[name="input_4"]:first-of-type');
+            const adultRadio = document.querySelector('input[name="input_4"][value*="Dospelá"], input[name="input_4"]:last-of-type');
             
             if (isChild && childRadio) {
                 // Nastav hodnotu, ale NETRIGGERUJ change event
@@ -1053,20 +1053,20 @@ function renderInfobox(data, icons, capacityFree, price) {
             window.spaFormState.frequency
         );
 
-        // POLE "Kto bude účastníkom tréningov?" (input_14)
+        // POLE "Kto bude účastníkom tréningov?" (input_4)
         const registrationTypeField = document.querySelector('.gfield--input-type-radio');
         if (registrationTypeField) {
             if (allSelected) {
                 registrationTypeField.style.display = '';
                 
                 // ⭐ AUTOMATICKY OZNAČ správny radio button na základe age_min
-                const childRadio = document.querySelector('input[name="input_14"][data-default="child"]');
-                const adultRadio = document.querySelector('input[name="input_14"][data-default="adult"]');
+                const childRadio = document.querySelector('input[name="input_4"][data-default="child"]');
+                const adultRadio = document.querySelector('input[name="input_4"][data-default="adult"]');
                 
-                if (childRadio && !document.querySelector('input[name="input_14"]:checked')) {
+                if (childRadio && !document.querySelector('input[name="input_4"]:checked')) {
                     childRadio.checked = true;
                     console.log('[SPA Section Control] Auto-checked CHILD radio');
-                } else if (adultRadio && !document.querySelector('input[name="input_14"]:checked')) {
+                } else if (adultRadio && !document.querySelector('input[name="input_4"]:checked')) {
                     adultRadio.checked = true;
                     console.log('[SPA Section Control] Auto-checked ADULT radio');
                 }
