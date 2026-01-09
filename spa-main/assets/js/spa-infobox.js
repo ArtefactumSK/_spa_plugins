@@ -405,7 +405,7 @@ function watchFormChanges() {
     }
     // Sleduj typ registrácie (Dieťa / Dospelá osoba)
     // POUŽIJ priamy selector pre GF radio
-    const registrationTypeFields = document.querySelectorAll('input[name="input_14"]');
+    /* const registrationTypeFields = document.querySelectorAll('input[name="input_14"]');
     registrationTypeFields.forEach(function(radio) {
         radio.addEventListener('change', function() {
             if (this.checked) {
@@ -413,7 +413,7 @@ function watchFormChanges() {
                 updateSectionVisibility();
             }
         });
-    });
+    }); */
     
     // ⭐ OZNAČ, že listenery sú pripojené
     listenersAttached = true;
@@ -600,11 +600,30 @@ function renderInfobox(data, icons, capacityFree, price) {
                     console.log('[SPA Program Type] Adult radio selected');
                 }
                 
-                // 2. ZOBRAZ/SKRY titulku "Kto bude účastníkom tréningov?"
-                const registrationTypeSection = document.querySelector('.gfield--input-type-radio .gfield_label');
-                if (registrationTypeSection) {
-                    registrationTypeSection.style.display = 'block'; // Vždy zobraz
-                    console.log('[SPA Program Type] Registration type label: VISIBLE');
+                // 2. ZOBRAZ titulku dynamicky podľa veku
+                const registrationTypeWrapper = document.querySelector('.gfield--input-type-radio');
+                
+                if (registrationTypeWrapper) {
+                    const label = registrationTypeWrapper.querySelector('.gfield_label');
+                    
+                    if (label) {
+                        if (isChild) {
+                            label.textContent = '👶 Účastníkom tréningov bude dieťa';
+                        } else {
+                            label.textContent = '👨‍🦱 Účastníkom tréningov bude dospelá osoba';
+                        }
+                        label.style.display = 'block';
+                        label.style.color = programData.primary_color || '#333';
+                    }
+                    
+                    // SKRY radio buttony – nie sú potrebné
+                    const radioInputs = registrationTypeWrapper.querySelectorAll('input[type="radio"]');
+                    radioInputs.forEach(radio => {
+                        const radioLabel = radio.closest('label') || radio.parentElement;
+                        if (radioLabel) radioLabel.style.display = 'none';
+                    });
+                    
+                    console.log('[SPA Program Type] Registration type title set:', isChild ? 'CHILD' : 'ADULT');
                 }
                 
                 // 3. ENABLE/DISABLE rodného čísla
@@ -1014,28 +1033,27 @@ function renderInfobox(data, icons, capacityFree, price) {
             console.log('[SPA Section Control] Participant section:', showParticipant ? 'VISIBLE' : 'HIDDEN');
         }
 
-        // SEKCIA 2: ÚDAJE O RODIČOVI
+        // SEKCIA 2: ÚDAJE O RODIČOVI – ZÁVISÍ OD age_min PROGRAMU
         const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
         
-        if (guardianSection) {
-            // GF používa input_X_Y formát pre radio
-            const registrationTypeField = document.querySelector(`input[name="input_14"]:checked`);
-            
+        if (guardianSection && wizardData.program_id) {
+            // Získaj age_min zo selectu programu
+            const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
             let isChild = false;
             
-            if (registrationTypeField) {
-                const label = registrationTypeField.closest('label') || registrationTypeField.parentElement;
-                const labelText = label ? label.textContent.trim().toLowerCase() : '';
+            if (programField && programField.value) {
+                const selectedOption = programField.options[programField.selectedIndex];
+                const ageMin = parseInt(selectedOption.getAttribute('data-age-min'));
                 
-                // "Dieťa (mladší ako 18 rokov)" → zobraz sekciu
-                isChild = labelText.includes('dieťa') || labelText.includes('diet') || labelText.includes('mladš');
+                isChild = ageMin && ageMin < 18;
             }
             
             toggleSection(guardianSection, isChild);
-            console.log('[SPA Section Control] Guardian section:', isChild ? 'VISIBLE (child)' : 'HIDDEN (adult)');
+            console.log('[SPA Section Control] Guardian section (based on age_min):', isChild ? 'VISIBLE (child program)' : 'HIDDEN (adult program)');
         }
+
         // SEKCIA 3: RODNÉ ČÍSLO (enable/disable podľa typu)
-        const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="birth_number"], input[placeholder*="rodné číslo"]');
+        /* const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="birth_number"], input[placeholder*="rodné číslo"]');
 
         if (birthNumberField) {
             // Zisti aktuálnu hodnotu spa_registration_type
@@ -1061,7 +1079,7 @@ function renderInfobox(data, icons, capacityFree, price) {
                 birthNumberField.style.pointerEvents = 'none';
                 console.log('[SPA Section Control] Birth number field: DISABLED (adult)');
             }
-        }
+        } */
     }
 
     /**
