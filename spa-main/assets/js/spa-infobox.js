@@ -91,13 +91,6 @@
             console.warn('[SPA Infobox] Container nenájdený v DOM.');
             return;
         }
-
-        // SKRY radio buttony "Kto bude účastníkom" pri štarte
-        const registrationTypeInput = document.querySelector('input[name="input_14"]');
-        const registrationTypeWrapper = registrationTypeInput?.closest('.gfield');
-        if (registrationTypeWrapper) {
-            registrationTypeWrapper.style.display = 'none';
-        }
     
         // Vytvor loader, ak ešte neexistuje
         if (!document.getElementById('spa-infobox-loader')) {
@@ -335,33 +328,8 @@ function watchFormChanges() {
                 }
             }
             
-            // SKRY VŠETKY SEKCIE pri resete mesta
-            if (!this.value || this.value === '0') {
-                const participantSection = findSectionByHeading('ÚDAJE O ÚČASTNÍKOVI TRÉNINGOV');
-                if (participantSection) {
-                    toggleSection(participantSection, false);
-                }
-                
-                const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
-                if (guardianSection) {
-                    toggleSection(guardianSection, false);
-                }
-                
-                // Skry radio wrapper
-                const registrationTypeInput = document.querySelector('input[name="input_14"]');
-                const registrationTypeWrapper = registrationTypeInput?.closest('.gfield');
-                if (registrationTypeWrapper) {
-                    registrationTypeWrapper.style.display = 'none';
-                }
-                
-                // Skry e-mailové polia
-                const childEmailInput = document.querySelector('input[name="input_15"]');
-                const adultEmailInput = document.querySelector('input[name="input_16"]');
-                const childEmailField = childEmailInput?.closest('.gfield');
-                const adultEmailField = adultEmailInput?.closest('.gfield');
-                if (childEmailField) childEmailField.style.display = 'none';
-                if (adultEmailField) adultEmailField.style.display = 'none';
-            }
+            loadInfoboxContent(currentState);
+            updatePageBreakVisibility();
         });
     }
     
@@ -422,33 +390,8 @@ function watchFormChanges() {
                     backupField.value = '';
                 }
             }
-            // SKRY VŠETKY SEKCIE pri resete programu
-            if (!this.value) {
-                const participantSection = findSectionByHeading('ÚDAJE O ÚČASTNÍKOVI TRÉNINGOV');
-                if (participantSection) {
-                    toggleSection(participantSection, false);
-                }
-                
-                const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
-                if (guardianSection) {
-                    toggleSection(guardianSection, false);
-                }
-                
-                // Skry radio wrapper
-                const registrationTypeInput = document.querySelector('input[name="input_14"]');
-                const registrationTypeWrapper = registrationTypeInput?.closest('.gfield');
-                if (registrationTypeWrapper) {
-                    registrationTypeWrapper.style.display = 'none';
-                }
-                
-                // Skry e-mailové polia
-                const childEmailInput = document.querySelector('input[name="input_15"]');
-                const adultEmailInput = document.querySelector('input[name="input_16"]');
-                const childEmailField = childEmailInput?.closest('.gfield');
-                const adultEmailField = adultEmailInput?.closest('.gfield');
-                if (childEmailField) childEmailField.style.display = 'none';
-                if (adultEmailField) adultEmailField.style.display = 'none';
-            }
+            // RESET DOM hodnoty frequency fieldu
+            const frequencyField = document.querySelector(`[name="${spaConfig.fields.spa_frequency}"]`);
             if (frequencyField) {
                 frequencyField.value = '';
                 frequencyField.selectedIndex = 0;
@@ -462,7 +405,7 @@ function watchFormChanges() {
     }
     // Sleduj typ registrácie (Dieťa / Dospelá osoba)
     // POUŽIJ priamy selector pre GF radio
-    /* const registrationTypeFields = document.querySelectorAll('input[name="input_14"]');
+    const registrationTypeFields = document.querySelectorAll('input[name="input_14"]');
     registrationTypeFields.forEach(function(radio) {
         radio.addEventListener('change', function() {
             if (this.checked) {
@@ -470,7 +413,7 @@ function watchFormChanges() {
                 updateSectionVisibility();
             }
         });
-    }); */
+    });
     
     // ⭐ OZNAČ, že listenery sú pripojené
     listenersAttached = true;
@@ -618,30 +561,22 @@ function renderInfobox(data, icons, capacityFree, price) {
             setTimeout(() => {
                 const isChild = programData.age_min && programData.age_min < 18;
 
-                // ⭐ NASTAV SPRÁVNE E-MAIL POLE (použitím name atribútu)
-                const childEmailInput = document.querySelector('input[name="input_15"]');
-                const adultEmailInput = document.querySelector('input[name="input_16"]');
-                
-                const childEmailField = childEmailInput?.closest('.gfield');
-                const adultEmailField = adultEmailInput?.closest('.gfield');
-                
-                if (childEmailField && adultEmailField) {
-                    if (isChild) {
-                        childEmailField.style.display = '';
-                        adultEmailField.style.display = 'none';
-                        
-                        // Vyčisti ADULT email
-                        if (adultEmailInput) adultEmailInput.value = '';
-                        
-                        console.log('[SPA Email] CHILD field (input_15) visible');
-                    } else {
-                        childEmailField.style.display = 'none';
-                        adultEmailField.style.display = '';
-                        
-                        // Vyčisti CHILD email
-                        if (childEmailInput) childEmailInput.value = '';
-                        
-                        console.log('[SPA Email] ADULT field (input_16) visible');
+                // ⭐ ZAVOLAJ ZOBRAZENIE SPRÁVNEHO E-MAIL POĽA
+                if (typeof handleEmailFieldVisibility === 'function') {
+                    handleEmailFieldVisibility(programData.age_min);
+                } else {
+                    // Fallback – priame nastavenie
+                    const childEmailField = document.querySelector('#field_1_15');
+                    const adultEmailField = document.querySelector('#field_1_16');
+                    
+                    if (childEmailField && adultEmailField) {
+                        if (isChild) {
+                            childEmailField.style.display = '';
+                            adultEmailField.style.display = 'none';
+                        } else {
+                            childEmailField.style.display = 'none';
+                            adultEmailField.style.display = '';
+                        }
                     }
                 }
                 
@@ -665,40 +600,11 @@ function renderInfobox(data, icons, capacityFree, price) {
                     console.log('[SPA Program Type] Adult radio selected');
                 }
                 
-                // 2. ZOBRAZ/SKRY titulku a radio buttony podľa stavu
-                const registrationTypeInput = document.querySelector('input[name="input_14"]');
-                const registrationTypeWrapper = registrationTypeInput?.closest('.gfield');
-                
-                if (registrationTypeWrapper) {
-                    // ZOBRAZ wrapper len ak je vybraná frekvencia
-                    if (window.spaFormState.frequency) {
-                        registrationTypeWrapper.style.display = 'block';
-                        
-                        const label = registrationTypeWrapper.querySelector('.gfield_label');
-                        
-                        if (label) {
-                            if (isChild) {
-                                label.textContent = '👶 Účastníkom tréningov bude dieťa';
-                            } else {
-                                label.textContent = '👨‍🦱 Účastníkom tréningov bude dospelá osoba';
-                            }
-                            label.style.display = 'block';
-                            label.style.fontWeight = 'bold';
-                            label.style.color = programData.primary_color || '#333';
-                        }
-                        
-                        // SKRY radio buttony – nie sú potrebné
-                        const radioInputs = registrationTypeWrapper.querySelectorAll('input[type="radio"]');
-                        radioInputs.forEach(radio => {
-                            const radioLabel = radio.closest('label') || radio.parentElement;
-                            if (radioLabel) radioLabel.style.display = 'none';
-                        });
-                        
-                        console.log('[SPA Program Type] Registration type title set:', isChild ? 'CHILD' : 'ADULT');
-                    } else {
-                        // Skry wrapper ak nie je vybraná frekvencia
-                        registrationTypeWrapper.style.display = 'none';
-                    }
+                // 2. ZOBRAZ/SKRY titulku "Kto bude účastníkom tréningov?"
+                const registrationTypeSection = document.querySelector('.gfield--input-type-radio .gfield_label');
+                if (registrationTypeSection) {
+                    registrationTypeSection.style.display = 'block'; // Vždy zobraz
+                    console.log('[SPA Program Type] Registration type label: VISIBLE');
                 }
                 
                 // 3. ENABLE/DISABLE rodného čísla
@@ -1101,35 +1007,35 @@ function renderInfobox(data, icons, capacityFree, price) {
         if (participantSection) {
             const showParticipant = !!(
                 wizardData.city_name && 
-                wizardData.program_name && 
-                window.spaFormState.frequency
+                wizardData.program_name
             );
             
             toggleSection(participantSection, showParticipant);
             console.log('[SPA Section Control] Participant section:', showParticipant ? 'VISIBLE' : 'HIDDEN');
         }
 
-        // SEKCIA 2: ÚDAJE O RODIČOVI – ZÁVISÍ OD age_min PROGRAMU
+        // SEKCIA 2: ÚDAJE O RODIČOVI
         const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
         
         if (guardianSection) {
-            // Získaj age_min zo selectu programu
-            const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+            // GF používa input_X_Y formát pre radio
+            const registrationTypeField = document.querySelector(`input[name="input_14"]:checked`);
+            
             let isChild = false;
             
-            if (programField && programField.value) {
-                const selectedOption = programField.options[programField.selectedIndex];
-                const ageMin = parseInt(selectedOption.getAttribute('data-age-min'));
+            if (registrationTypeField) {
+                const label = registrationTypeField.closest('label') || registrationTypeField.parentElement;
+                const labelText = label ? label.textContent.trim().toLowerCase() : '';
                 
-                isChild = ageMin && ageMin < 18;
+                // "Dieťa (mladší ako 18 rokov)" → zobraz sekciu
+                isChild = labelText.includes('dieťa') || labelText.includes('diet') || labelText.includes('mladš');
             }
             
             toggleSection(guardianSection, isChild);
-            console.log('[SPA Section Control] Guardian section (based on age_min):', isChild ? 'VISIBLE (child program)' : 'HIDDEN (adult program)');
+            console.log('[SPA Section Control] Guardian section:', isChild ? 'VISIBLE (child)' : 'HIDDEN (adult)');
         }
-
         // SEKCIA 3: RODNÉ ČÍSLO (enable/disable podľa typu)
-        /* const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="birth_number"], input[placeholder*="rodné číslo"]');
+        const birthNumberField = document.querySelector('input[name*="rodne_cislo"], input[name*="birth_number"], input[placeholder*="rodné číslo"]');
 
         if (birthNumberField) {
             // Zisti aktuálnu hodnotu spa_registration_type
@@ -1155,7 +1061,7 @@ function renderInfobox(data, icons, capacityFree, price) {
                 birthNumberField.style.pointerEvents = 'none';
                 console.log('[SPA Section Control] Birth number field: DISABLED (adult)');
             }
-        } */
+        }
     }
 
     /**
