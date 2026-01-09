@@ -735,34 +735,15 @@ function renderInfobox(data, icons, capacityFree, price) {
                 if (childRadio) childRadio.removeAttribute('data-default');
             }
             
-            // ENABLE/DISABLE rodného čísla
+            // ⭐ RODNÉ ČÍSLO - SKRY až do výberu frekvencie
             const birthNumberField = document.querySelector('input[name="input_8"]');
             const birthNumberWrapper = birthNumberField ? birthNumberField.closest('.gfield') : null;
 
-            if (birthNumberField) {
-                if (isChild) {
-                    birthNumberField.disabled = false;
-                    birthNumberField.readOnly = false;
-                    birthNumberField.style.opacity = '1';
-                    birthNumberField.style.pointerEvents = 'auto';
-                    birthNumberField.style.backgroundColor = '';
-                    
-                    if (birthNumberWrapper) {
-                        birthNumberWrapper.style.display = '';
-                        birthNumberWrapper.style.opacity = '1';
-                    }
-                } else {
-                    birthNumberField.disabled = true;
-                    birthNumberField.readOnly = true;
-                    birthNumberField.value = '';
-                    birthNumberField.style.opacity = '0.5';
-                    birthNumberField.style.pointerEvents = 'none';
-                    birthNumberField.style.backgroundColor = '#f5f5f5';
-                    
-                    if (birthNumberWrapper) {
-                        birthNumberWrapper.style.opacity = '0.5';
-                    }
-                }
+            if (birthNumberField && birthNumberWrapper) {
+                // Vždy SKRY pri prvotnom výbere programu
+                birthNumberWrapper.style.display = 'none';
+                birthNumberField.setAttribute('data-is-child', isChild ? 'true' : 'false');
+            }
             }
         }, 100);
         
@@ -1138,11 +1119,10 @@ function renderInfobox(data, icons, capacityFree, price) {
                 
                 if (childRadio && !document.querySelector('input[name="input_14"]:checked')) {
                     childRadio.checked = true;
-                    // Trigger change event pre správne zobrazenie sekcií
-                    setTimeout(() => updateSectionVisibility(), 50);
+                    console.log('[SPA Section Control] Auto-checked CHILD radio');
                 } else if (adultRadio && !document.querySelector('input[name="input_14"]:checked')) {
                     adultRadio.checked = true;
-                    setTimeout(() => updateSectionVisibility(), 50);
+                    console.log('[SPA Section Control] Auto-checked ADULT radio');
                 }
                 
                 console.log('[SPA Section Control] Registration type field: VISIBLE');
@@ -1159,23 +1139,69 @@ function renderInfobox(data, icons, capacityFree, price) {
             console.log('[SPA Section Control] Participant section:', allSelected ? 'VISIBLE' : 'HIDDEN');
         }
 
-        // SEKCIA 2: ÚDAJE O RODIČOVI (len pre dieťa A len ak je všetko vybrané)
+        // ⭐ SEKCIA 2: ÚDAJE O RODIČOVI
         const guardianSection = findSectionByHeading('ÚDAJE O RODIČOVI / ZÁKONNOM ZÁSTUPCOVI');
         if (guardianSection && allSelected) {
-            const registrationTypeChecked = document.querySelector('input[name="input_14"]:checked');
-            
+            // Zisti či je dieťa pomocou:
+            // 1. Checked radio buttonu
+            // 2. Fallback na data-default atribút
             let isChild = false;
+            
+            const registrationTypeChecked = document.querySelector('input[name="input_14"]:checked');
             if (registrationTypeChecked) {
                 const label = registrationTypeChecked.closest('label') || registrationTypeChecked.parentElement;
                 const labelText = label ? label.textContent.trim().toLowerCase() : '';
                 isChild = labelText.includes('dieťa') || labelText.includes('diet') || labelText.includes('mladš');
+            } else {
+                // Fallback: použi data-default
+                const childRadioDefault = document.querySelector('input[name="input_14"][data-default="child"]');
+                if (childRadioDefault) {
+                    isChild = true;
+                }
             }
             
             toggleSection(guardianSection, isChild);
             console.log('[SPA Section Control] Guardian section:', isChild ? 'VISIBLE (child)' : 'HIDDEN (adult)');
+            
+            // ⭐ RODNÉ ČÍSLO - teraz ZOBRAZ/SKRY podľa typu
+            const birthNumberField = document.querySelector('input[name="input_8"]');
+            const birthNumberWrapper = birthNumberField ? birthNumberField.closest('.gfield') : null;
+            
+            if (birthNumberField && birthNumberWrapper) {
+                const isChildProgram = birthNumberField.getAttribute('data-is-child') === 'true';
+                
+                if (isChildProgram) {
+                    // DIEŤA: zobraz a enable
+                    birthNumberWrapper.style.display = '';
+                    birthNumberWrapper.style.opacity = '1';
+                    birthNumberField.disabled = false;
+                    birthNumberField.readOnly = false;
+                    birthNumberField.style.opacity = '1';
+                    birthNumberField.style.pointerEvents = 'auto';
+                    birthNumberField.style.backgroundColor = '';
+                    console.log('[SPA Section Control] Birth number: VISIBLE (child program)');
+                } else {
+                    // DOSPELÝ: skry a disable
+                    birthNumberWrapper.style.display = 'none';
+                    birthNumberField.disabled = true;
+                    birthNumberField.readOnly = true;
+                    birthNumberField.value = '';
+                    birthNumberField.style.opacity = '0.5';
+                    birthNumberField.style.pointerEvents = 'none';
+                    birthNumberField.style.backgroundColor = '#f5f5f5';
+                    console.log('[SPA Section Control] Birth number: HIDDEN (adult program)');
+                }
+            }
         } else if (guardianSection) {
             toggleSection(guardianSection, false);
             console.log('[SPA Section Control] Guardian section: HIDDEN (not all selected)');
+            
+            // ⭐ RODNÉ ČÍSLO - skry ak nie je všetko vybrané
+            const birthNumberField = document.querySelector('input[name="input_8"]');
+            const birthNumberWrapper = birthNumberField ? birthNumberField.closest('.gfield') : null;
+            if (birthNumberWrapper) {
+                birthNumberWrapper.style.display = 'none';
+            }
         }
 
         console.log('[SPA Section Control] ========== UPDATE END ==========');
