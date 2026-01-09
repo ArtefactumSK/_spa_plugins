@@ -391,34 +391,7 @@ function handleParticipantTypeSelection(target) {
         return `${firstPart}.${lastPart}@piaseckyacademy.sk`;
     }
 
-    /**
-     * Zobrazenie správneho e-mail poľa podľa age_min
-     */
-    function handleEmailFieldVisibility(ageMin) {
-        const isChild = ageMin && ageMin < 18;
-        
-        const childEmailField = document.querySelector('#field_1_15');
-        const adultEmailField = document.querySelector('#field_1_16');
-        
-        if (!childEmailField || !adultEmailField) {
-            return;
-        }
-        
-        if (isChild) {
-            childEmailField.style.display = '';
-            adultEmailField.style.display = 'none';
-            
-            const adultInput = adultEmailField.querySelector('input[type="email"]');
-            if (adultInput) adultInput.value = '';
-        } else {
-            childEmailField.style.display = 'none';
-            adultEmailField.style.display = '';
-            
-            const childInput = childEmailField.querySelector('input[type="email"]');
-            if (childInput) childInput.value = '';
-        }
-    }
-
+    
     /**
      * Automatické vyplnenie e-mailu pre CHILD
      */
@@ -427,7 +400,7 @@ function handleParticipantTypeSelection(target) {
             return;
         }
         
-        const childEmailInput = document.querySelector('#input_1_15');
+        const childEmailInput = document.querySelector('input[name="input_15"]');
         
         if (!childEmailInput || childEmailInput.value.trim() !== '') {
             return;
