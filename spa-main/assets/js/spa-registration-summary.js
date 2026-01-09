@@ -80,16 +80,68 @@
                 return;
             }
             
-            // Získaj target (child/youth/adult)
+            // Ulož target do globálnej premennej (použijeme neskôr)
             const target = selectedOption.getAttribute('data-target');
-            
             if (target) {
-                // Označ radio button + zobraz email pole
-                handleParticipantTypeSelection(target);
+                window.spaSelectedTarget = target;
+                console.log('[SPA] Program selected, target saved:', target);
             }
+            
+            // Nastav listener na frekvenciu
+            setupFrequencyListener();
         });
 
         console.log('[SPA] Dynamické selecty inicializované.');
+    }
+
+    /**
+     * Nastavenie listenera na výber frekvencie
+     */
+    function setupFrequencyListener() {
+        // Počkaj na renderovanie frekvenčných polí
+        setTimeout(function() {
+            // Nájdi frekvenčné radio buttony
+            const frequencyRadios = document.querySelectorAll('input[type="radio"][name*="input_14"]');
+            
+            if (frequencyRadios.length === 0) {
+                console.warn('[SPA] Frequency radios not found, trying participant type directly');
+                // Ak nie sú frekvencie (1-frekvenčný program), hneď označ typ účastníka
+                if (window.spaSelectedTarget) {
+                    handleParticipantTypeSelection(window.spaSelectedTarget);
+                }
+                return;
+            }
+            
+            console.log('[SPA] Found frequency radios:', frequencyRadios.length);
+            
+            // Odstráň staré listenery
+            frequencyRadios.forEach(radio => {
+                radio.removeEventListener('change', handleFrequencyChange);
+            });
+            
+            // Pridaj nové listenery
+            frequencyRadios.forEach(radio => {
+                radio.addEventListener('change', handleFrequencyChange);
+            });
+            
+            // Ak je už niečo vybraté (1-frekvenčný program), trigger hneď
+            const checkedRadio = Array.from(frequencyRadios).find(r => r.checked);
+            if (checkedRadio && window.spaSelectedTarget) {
+                console.log('[SPA] Frequency already selected, triggering participant type');
+                handleParticipantTypeSelection(window.spaSelectedTarget);
+            }
+        }, 300);
+    }
+    
+    /**
+     * Handler pre zmenu frekvencie
+     */
+    function handleFrequencyChange() {
+        console.log('[SPA] Frequency changed:', this.value);
+        
+        if (window.spaSelectedTarget) {
+            handleParticipantTypeSelection(window.spaSelectedTarget);
+        }
     }
 
     /**
@@ -291,64 +343,82 @@
     }
 
     /**
-     * Riadenie viditeľnosti emailových polí na základe veku programu
-     * CHILD/YOUTH → input_15 (auto-generovaný)
-     * ADULT → input_16 (povinný)
-     */
-    function handleEmailFieldVisibility(target) {
-        console.log('[SPA] handleEmailFieldVisibility called with target:', target);
-        
-        // Nájdi emailové inputy podľa name atribútu
-        const childEmailInput = document.querySelector('input[name="input_15"]');
-        const adultEmailInput = document.querySelector('input[name="input_16"]');
-        
-        if (!childEmailInput || !adultEmailInput) {
-            console.warn('[SPA] Email inputs not found in DOM');
-            return;
+ * Automatická voľba typu účastníka + riadenie viditeľnosti emailových polí
+ */
+function handleParticipantTypeSelection(target) {
+    console.log('[SPA] handleParticipantTypeSelection called with target:', target);
+    
+    // 1. Nájdi wrapper s labelom "Kto bude účastníkom"
+    let participantWrapper = null;
+    const allRadios = document.querySelectorAll('input[type="radio"]');
+    
+    allRadios.forEach(radio => {
+        const wrapper = radio.closest('.gfield');
+        if (wrapper) {
+            const label = wrapper.querySelector('.gfield_label');
+            if (label && label.textContent.includes('Kto bude účastníkom')) {
+                participantWrapper = wrapper;
+            }
         }
-        
-        // Získaj GF field wrappery (closest .gfield)
-        const childEmailWrapper = childEmailInput.closest('.gfield');
-        const adultEmailWrapper = adultEmailInput.closest('.gfield');
-        
-        if (!childEmailWrapper || !adultEmailWrapper) {
-            console.warn('[SPA] Email field wrappers not found');
-            return;
-        }
-        
-        // CHILD/YOUTH programy
-        if (target === 'child' || target === 'youth') {
-            // Zobraz CHILD pole (input_15)
-            childEmailWrapper.style.display = '';
-            childEmailWrapper.classList.remove('gfield_visibility_hidden');
-            childEmailInput.removeAttribute('disabled');
-            
-            // Skry ADULT pole (input_16)
-            adultEmailWrapper.style.display = 'none';
-            adultEmailWrapper.classList.add('gfield_visibility_hidden');
-            adultEmailInput.setAttribute('disabled', 'disabled');
-            adultEmailInput.removeAttribute('required');
-            adultEmailInput.setAttribute('aria-required', 'false');
-            
-            console.log('[SPA] CHILD email field visible, ADULT hidden');
-        }
-        // ADULT programy
-        else if (target === 'adult') {
-            // Skry CHILD pole (input_15)
-            childEmailWrapper.style.display = 'none';
-            childEmailWrapper.classList.add('gfield_visibility_hidden');
-            childEmailInput.setAttribute('disabled', 'disabled');
-            
-            // Zobraz ADULT pole (input_16)
-            adultEmailWrapper.style.display = '';
-            adultEmailWrapper.classList.remove('gfield_visibility_hidden');
-            adultEmailInput.removeAttribute('disabled');
-            adultEmailInput.setAttribute('required', 'required');
-            adultEmailInput.setAttribute('aria-required', 'true');
-            
-            console.log('[SPA] ADULT email field visible, CHILD hidden');
-        }
+    });
+    
+    // Zobraz wrapper ak je skrytý
+    if (participantWrapper) {
+        participantWrapper.style.display = '';
+        participantWrapper.classList.remove('gfield_visibility_hidden');
+        console.log('[SPA] Participant wrapper shown');
     }
+    
+    // 2. RADIO BUTTONY pre typ účastníka
+    const radioButtons = document.querySelectorAll('input[type="radio"]');
+    
+    let selectedRadio = null;
+    
+    radioButtons.forEach(radio => {
+        const labelElement = radio.closest('label') || radio.parentElement;
+        if (!labelElement) return;
+        
+        const label = labelElement.textContent.trim().toLowerCase();
+        const isChildOption = label.includes('dieťa') || label.includes('diet') || label.includes('mladš');
+        const isAdultOption = label.includes('dospel') || label.includes('18+') || label.includes('adult');
+        
+        if (target === 'child' || target === 'youth') {
+            if (isChildOption) {
+                radio.checked = true;
+                radio.disabled = false;
+                selectedRadio = radio;
+            } else if (isAdultOption) {
+                radio.checked = false;
+                radio.disabled = true;
+            }
+        } else if (target === 'adult') {
+            if (isAdultOption) {
+                radio.checked = true;
+                radio.disabled = false;
+                selectedRadio = radio;
+            } else if (isChildOption) {
+                radio.checked = false;
+                radio.disabled = true;
+            }
+        }
+    });
+    
+    // 3. Trigger GF conditional logic
+    if (selectedRadio) {
+        if (typeof jQuery !== 'undefined') {
+            jQuery(selectedRadio).trigger('change');
+            jQuery(selectedRadio).trigger('click');
+        }
+        
+        selectedRadio.dispatchEvent(new Event('change', { bubbles: true }));
+        selectedRadio.dispatchEvent(new Event('click', { bubbles: true }));
+        
+        console.log('[SPA] Radio button triggered:', selectedRadio.value);
+    }
+    
+    // 4. EMAILOVÉ POLIA
+    handleEmailFieldVisibility(target);
+}
 
     /**
      * Reset program fieldu
