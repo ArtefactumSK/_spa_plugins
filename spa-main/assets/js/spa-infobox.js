@@ -744,7 +744,6 @@ function renderInfobox(data, icons, capacityFree, price) {
                 birthNumberWrapper.style.display = 'none';
                 birthNumberField.setAttribute('data-is-child', isChild ? 'true' : 'false');
             }
-            }
         }, 100);
         
         programDiv.innerHTML = programHtml;
