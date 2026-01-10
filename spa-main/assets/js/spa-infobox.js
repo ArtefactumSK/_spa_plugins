@@ -1000,8 +1000,7 @@ function renderInfobox(data, icons, capacityFree, price) {
 
 
     /**
- * RIADENIE VIDITEĽNOSTI SEKCIÍ – OPRAVENÁ VERZIA
- * Nahraď funkciu updateSectionVisibility() v spa-infobox.js
+ * RIADENIE VIDITEĽNOSTI SEKCIÍ
  */
     function updateSectionVisibility() {
         console.log('[SPA Section Control] ========== UPDATE START ==========');
