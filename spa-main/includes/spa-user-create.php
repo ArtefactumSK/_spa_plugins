@@ -45,8 +45,8 @@ function spa_get_or_create_parent_user($data, $meta_data = []) {
         spa_update_parent_meta($existing_user->ID, $meta_data);
         return $existing_user->ID;
     }
-    
-    $data['user_login'] = spa_generate_unique_username($data['first_name'], $data['last_name']);
+        
+    $data['user_login'] = spa_generate_unique_username($data['first_name'] . '.' . $data['last_name']);
     $user_id = wp_insert_user($data);
     
     if (is_wp_error($user_id)) {
@@ -89,7 +89,7 @@ function spa_get_or_create_child_user($data, $parent_user_id, $meta_data = []) {
         return $existing_user->ID;
     }
     
-    $data['user_login'] = spa_generate_unique_username($data['first_name'], $data['last_name']);
+    $data['user_login'] = spa_generate_unique_username($data['first_name'] . '.' . $data['last_name']);
     $user_id = wp_insert_user($data);
     
     if (is_wp_error($user_id)) {
@@ -131,7 +131,7 @@ function spa_get_or_create_adult_user($data, $meta_data = []) {
         return $existing_user->ID;
     }
     
-    $data['user_login'] = spa_generate_unique_username($data['first_name'], $data['last_name']);
+    $data['user_login'] = spa_generate_unique_username($data['first_name'] . '.' . $data['last_name']);
     $user_id = wp_insert_user($data);
     
     if (is_wp_error($user_id)) {
