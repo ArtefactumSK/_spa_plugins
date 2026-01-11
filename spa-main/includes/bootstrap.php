@@ -79,6 +79,7 @@ function spa_init() {
     spa_infobox_init();
 
     // Inicializácia user managementu
+    require_once SPA_PLUGIN_DIR . 'includes/spa-user-create.php';
     require_once SPA_PLUGIN_DIR . 'includes/spa-user-management.php';
     spa_user_management_init();
 }

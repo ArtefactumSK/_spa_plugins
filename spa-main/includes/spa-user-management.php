@@ -41,7 +41,21 @@ function spa_handle_registration_submission($entry, $form) {
     
     if ($registration_type === 'child') {
         // CHILD MODE
-        $parent_email = rgar($entry, '12'); // input_12 (spa_parent_email)
+        // Parent údaje z POST (entry môže byť prázdne pri async spracovaní)
+        $parent_email_raw = rgpost('input_12');
+        $parent_email_entry = rgar($entry, '12');
+        
+        $parent_first_raw = trim(rgpost('input_18_3'));
+        $parent_last_raw = trim(rgpost('input_18_6'));
+        
+        error_log('[SPA MAP RAW] input_12=' . ($parent_email_raw ?: 'EMPTY'));
+        error_log('[SPA MAP ENTRY] entry_12=' . ($parent_email_entry ?: 'EMPTY'));
+        error_log('[SPA MAP RAW] parent_first=' . ($parent_first_raw ?: 'EMPTY'));
+        error_log('[SPA MAP RAW] parent_last=' . ($parent_last_raw ?: 'EMPTY'));
+        
+        // Použiť POST ako primárny zdroj
+        $parent_email = !empty($parent_email_raw) ? $parent_email_raw : $parent_email_entry;
+        
         $child_email_input = rgar($entry, '15'); // input_15 (spa_client_email)
         
         // Child email: input_15 ALEBO vygenerovať
@@ -77,20 +91,34 @@ function spa_handle_registration_submission($entry, $form) {
         'member_name_last' => rgar($entry, '6.6'),
         'member_email' => $child_email_final,
         'member_email_adult' => $adult_email,
-        'guardian_name_first' => rgar($entry, '18.3'),
-        'guardian_name_last' => rgar($entry, '18.6'),
+        'guardian_name_first' => ($registration_type === 'child' && !empty($parent_first_raw)) ? $parent_first_raw : rgar($entry, '18.3'),
+        'guardian_name_last' => ($registration_type === 'child' && !empty($parent_last_raw)) ? $parent_last_raw : rgar($entry, '18.6'),
         'guardian_email' => $parent_email,
-        'guardian_phone' => rgar($entry, '13'),
+        'guardian_phone' => rgpost('input_13') ?: rgar($entry, '13'),
     ];
     
     error_log('[SPA User Management] Entry data: ' . print_r($entry_data, true));
     
     // Volanie skeleton funkcií
     if ($registration_type === 'child') {
-        spa_create_child_user_skeleton($entry_data);
-        spa_create_parent_user_skeleton($entry_data);
+        // CHILD FLOW: najprv parent, potom child
+        $parent_user_id = spa_create_parent_user_skeleton($entry_data);
+        
+        if ($parent_user_id) {
+            // Dočasne upravíme entry_data pre child
+            $entry_data['parent_user_id'] = $parent_user_id;
+            $child_user_id = spa_create_child_user_skeleton($entry_data);
+            
+            if ($child_user_id) {
+                error_log('[SPA REGISTRATION] SUCCESS: Parent=' . $parent_user_id . ', Child=' . $child_user_id);
+            }
+        }
     } elseif ($registration_type === 'adult') {
-        spa_create_parent_user_skeleton($entry_data);
+        $user_id = spa_create_parent_user_skeleton($entry_data);
+        
+        if ($user_id) {
+            error_log('[SPA REGISTRATION] SUCCESS: Adult user=' . $user_id);
+        }
     }
 }
 
@@ -162,13 +190,20 @@ function spa_create_parent_user_skeleton($data) {
     
     error_log('[SPA Parent User] Prepared data: ' . print_r($user_data, true));
     
-    // TODO: Volanie wp_insert_user($user_data)
+    // Vytvorenie alebo získanie usera
+    $user_id = spa_get_or_create_parent_user($user_data);
+    
+    if (!$user_id) {
+        error_log('[SPA Parent User] === END (FAILED) ===');
+        return false;
+    }
+    
     // TODO: Poslať email s heslom
     // TODO: Uložiť telefón do user meta
     
-    error_log('[SPA Parent User] === END SKELETON (NOT CREATED) ===');
+    error_log('[SPA Parent User] === END (SUCCESS) ===');
     
-    return false; // TODO: Vrátiť user_id po vytvorení
+    return $user_id;
 }
 
 /**
@@ -179,6 +214,9 @@ function spa_create_parent_user_skeleton($data) {
  */
 function spa_create_child_user_skeleton($data) {
     error_log('[SPA Child User] === START SKELETON ===');
+    
+    // Získaj parent_user_id z dát
+    $parent_user_id = isset($data['parent_user_id']) ? $data['parent_user_id'] : null;
     
     // Validácia vstupných dát
     if (empty($data['member_email'])) {
@@ -211,15 +249,27 @@ function spa_create_child_user_skeleton($data) {
     
     error_log('[SPA Child User] Prepared data: ' . print_r($user_data, true));
     
+    if (!$parent_user_id) {
+        error_log('[SPA Child User] ERROR: Cannot create child without parent_user_id');
+        error_log('[SPA Child User] === END (FAILED - NO PARENT) ===');
+        return false;
+    }
+    
+    // Vytvorenie alebo získanie usera
+    $user_id = spa_get_or_create_child_user($user_data, $parent_user_id);
+    
+    if (!$user_id) {
+        error_log('[SPA Child User] === END (FAILED) ===');
+        return false;
+    }
+    
     // TODO: Vygenerovať 4-miestny PIN
     // TODO: Uložiť PIN do user meta (sha256 hash)
-    // TODO: Vytvoriť väzbu parent_user_id → child_user_id (user meta)
-    // TODO: Volanie wp_insert_user($user_data)
     // TODO: Poslať rodičovi email s PIN kódom dieťaťa
     
-    error_log('[SPA Child User] === END SKELETON (NOT CREATED) ===');
+    error_log('[SPA Child User] === END (SUCCESS) ===');
     
-    return false; // TODO: Vrátiť user_id po vytvorení
+    return $user_id;
 }
 
 

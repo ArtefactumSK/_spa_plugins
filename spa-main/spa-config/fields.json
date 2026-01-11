@@ -5,19 +5,25 @@
   "spa_frequency": "input_31",
   "spa_resolved_type": "input_34",
 
-  "spa_participant_first_name": "input_6_3",
-  "spa_participant_last_name": "input_6_6",
+  "spa_member_name_first": "input_6.3",
+  "spa_member_name_last": "input_6.6",
+  "spa_member_birthdate": "input_7",
+  "spa_member_birthnumber": "input_8",
 
-  
-  "spa_client_email": "input_16",
+  "spa_client_email": "input_15",
+  "spa_client_email_required": "input_16",
   "spa_client_phone": "input_19",
   "spa_client_address": "input_17",
 
-  
-  "spa_consent_gdpr": "input_22",
-  "spa_consent_health": "input_24",
-  "spa_consent_statutes": "input_21",
-  "spa_consent_terms": "input_23",
-  "spa_consent_guardian": "input_25",
-  "spa_consent_marketing": "input_26"
+  "spa_guardian_name_first": "input_18.3",
+  "spa_guardian_name_last": "input_18.6",
+  "spa_parent_email": "input_12",
+  "spa_parent_phone": "input_13",
+
+  "spa_consent_gdpr": "input_35.1",
+  "spa_consent_health": "input_35.2",
+  "spa_consent_statutes": "input_35.3",
+  "spa_consent_terms": "input_35.4",
+  "spa_consent_guardian": "input_35.5",
+  "spa_consent_marketing": "input_37.1"
 }
