@@ -109,23 +109,8 @@ function spa_get_or_create_adult_user($data, $meta_data = []) {
     $existing_user = get_user_by('email', $data['user_email']);
     
     if ($existing_user) {
-        error_log('[SPA USER] CHILD existing user_id=' . $existing_user->ID);
-        
-        if (!get_user_meta($existing_user->ID, 'parent_id', true)) {
-            update_user_meta($existing_user->ID, 'parent_id', $parent_user_id);
-            error_log('[SPA META] parent_id saved child=' . $existing_user->ID . ' parent=' . $parent_user_id);
-        }
-        
-        spa_update_child_meta($existing_user->ID, $meta_data);
-        
-        if (!get_user_meta($existing_user->ID, 'spa_pin', true)) {
-            spa_generate_and_store_pin($existing_user->ID);
-        }
-        
-        if (!get_user_meta($existing_user->ID, 'variabilny_symbol', true)) {
-            spa_generate_and_store_vs($existing_user->ID);
-        }
-        
+        error_log('[SPA USER] ADULT existing user_id=' . $existing_user->ID);
+        spa_update_adult_meta($existing_user->ID, $meta_data);
         return $existing_user->ID;
     }
     
