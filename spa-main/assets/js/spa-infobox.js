@@ -41,11 +41,13 @@
     
     // Gravity Forms AJAX callback
     if (typeof jQuery !== 'undefined') {
-        jQuery(document).on('gform_post_render', function() {
-            initInfobox();
-            watchFormChanges();
-        });
-    }
+    jQuery(document).on('gform_post_render', function() {
+        initInfobox();
+        watchFormChanges();
+        // ⭐ KRITICKÉ: Skry sekcie AŽ PO GF renderi
+        hideAllSectionsOnInit();
+    });
+}
 
     /**
      * CENTRÁLNE URČENIE CASE
@@ -110,11 +112,6 @@
     
         // Načítaj úvodný stav
         loadInfoboxContent(0);
-
-        // ⭐ KRITICKÉ: Okamžite skry všetky sekcie pri načítaní
-        setTimeout(function() {
-            hideAllSectionsOnInit();
-        }, 100);
 
         console.log('[SPA Infobox] Inicializovaný.');
     }
@@ -349,7 +346,13 @@
      * Skrytie všetkých sekcií pri inicializácii
      */
     function hideAllSectionsOnInit() {
-        console.log('[SPA Init] Hiding all sections on page load');
+        console.log('[SPA Init] ========== HIDING ALL SECTIONS ==========');
+        
+        // ⭐ GUARD: Neexecutuj ak už boli sekcie skryté
+        if (window.spa_sections_hidden) {
+            console.log('[SPA Init] Sections already hidden, skipping');
+            return;
+        }
         
         // Skry pole "Kto bude účastníkom tréningov?"
         const registrationTypeField = document.querySelector('.gfield--input-type-radio');
@@ -385,6 +388,10 @@
                 console.log(`[SPA Init] ❌ Hidden: ${cssClass}`);
             }
         });
+        
+        // ⭐ Označ že sekcie boli skryté
+        window.spa_sections_hidden = true;
+        console.log('[SPA Init] ========== SECTIONS HIDDEN COMPLETE ==========');
     }
 
     /**
