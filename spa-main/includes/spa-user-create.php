@@ -7,24 +7,6 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-// ✅ Zabezpečenie proti duplicite s témou
-if (!function_exists('spa_generate_unique_username')) {
-    /**
-     * Generovanie unikátneho username
-     * Fallback ak téma nedefinuje túto funkciu
-     */
-    function spa_generate_unique_username($base) {
-        $username = sanitize_user($base, true);
-        $counter = 1;
-        
-        while (username_exists($username)) {
-            $username = sanitize_user($base . $counter, true);
-            $counter++;
-        }
-        
-        return $username;
-    }
-}
 /**
  * Získanie alebo vytvorenie parent usera
  * 
