@@ -463,12 +463,18 @@
                 const selectedOption = this.options[this.selectedIndex];
                 
                 console.log('[SPA Infobox] Program changed - value:', this.value);
+                console.log('[SPA Infobox] Program changed - text:', selectedOption.text);
                 
-                if (this.value && this.value !== '' && this.value !== '0') {
+                if (this.value) {
                     wizardData.program_name = selectedOption.text;
                     wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
                     
-                    // Parsuj vek
+                    console.log('[SPA Infobox] Program ID:', wizardData.program_id);
+                    
+                    // RESET veku pred novým parsovaním
+                    wizardData.program_age = '';
+                    
+                    // Parsuj vek z názvu programu
                     const ageMatch = selectedOption.text.match(/(\d+)[–-](\d+)/);
                     if (ageMatch) {
                         wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
@@ -637,6 +643,11 @@ function renderInfobox(data, icons, capacityFree, price) {
             ].filter(Boolean).join(' ');
             
             programHtml += `<div class="spa-program-icon-large" style="${colorStyle}">${programData.icon}</div>`;
+        }
+        else {
+            // Pre program bez veku použij &nbsp;, inak zobraz vek
+            const ageText = wizardData.program_age ? wizardData.program_age : '&nbsp;';
+            programHtml += `<div class="spa-age-range-text" style="margin-top: 200px;">${ageText}</div>`;
         }
         
         // VEĽKÝ TEXT VEKU POD SVG
