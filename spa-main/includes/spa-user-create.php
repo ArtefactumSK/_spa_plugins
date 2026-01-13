@@ -163,6 +163,11 @@ function spa_update_child_meta($user_id, $meta_data) {
         update_user_meta($user_id, 'rodne_cislo', $birth_number_clean);
         error_log('[SPA META] rodne_cislo saved for user_id=' . $user_id);
     }
+    
+    if (!empty($meta_data['health_notes'])) {
+        update_user_meta($user_id, 'health_notes', sanitize_textarea_field($meta_data['health_notes']));
+        error_log('[SPA META] health_notes saved for user_id=' . $user_id);
+    }
 }
 
 /**
@@ -183,6 +188,16 @@ function spa_update_adult_meta($user_id, $meta_data) {
     
     if (!empty($meta_data['address_zip'])) {
         update_user_meta($user_id, 'address_zip', sanitize_text_field($meta_data['address_zip']));
+    }
+    
+    if (!empty($meta_data['birthdate'])) {
+        update_user_meta($user_id, 'birthdate', sanitize_text_field($meta_data['birthdate']));
+        error_log('[SPA META] birthdate saved for user_id=' . $user_id);
+    }
+    
+    if (!empty($meta_data['health_notes'])) {
+        update_user_meta($user_id, 'health_notes', sanitize_textarea_field($meta_data['health_notes']));
+        error_log('[SPA META] health_notes saved for user_id=' . $user_id);
     }
 }
 

@@ -206,68 +206,131 @@ function spa_validate_phone_conditionally($result, $value, $form, $field) {
 }
 
 /**
- * Validácia checkbox group súhlasov
- * Field 35 = hlavná checkbox group (sub-inputy 35.1 až 35.5)
- */
-/* function spa_validate_consents($validation_result) {
-    $form = $validation_result['form'];
-    $resolved_type = rgpost('input_34');
-    
-    // Definuj povinné súhlasy
-    $required_consents = [
-        '35.1' => 'GDPR súhlas je povinný.',
-        '35.2' => 'Zdravotný súhlas je povinný.',
-        '35.3' => 'Súhlas so stanovami je povinný.',
-        '35.4' => 'Súhlas s podmienkami je povinný.',
-    ];
-    
-    // Pre child pridaj súhlas zákonného zástupcu
-    if ($resolved_type === 'child') {
-        $required_consents['35.5'] = 'Súhlas zákonného zástupcu je povinný.';
-    }
-    
-    $missing_consents = [];
-    
-    foreach ($required_consents as $input_id => $error_msg) {
-        $value = rgpost('input_' . $input_id);
-        
-        if (empty($value)) {
-            $missing_consents[] = $error_msg;
-            error_log('[SPA VALIDATION] Missing consent: ' . $input_id);
-        }
-    }
-    
-    // Ak chýbajú súhlasy, pridaj chybu k field 35
-    if (!empty($missing_consents)) {
-        $validation_result['is_valid'] = false;
-        
-        foreach ($form['fields'] as &$field) {
-            if ($field->id == 35) {
-                $field->failed_validation = true;
-                $field->validation_message = implode(' ', $missing_consents);
-                error_log('[SPA VALIDATION] Consents validation failed');
-                break;
-            }
-        }
-        
-        $validation_result['form'] = $form;
-    }
-    
-    return $validation_result;
-} */
-
-/**
  * Spracovanie po úspešnom submite
  */
 function spa_gf_after_submission($entry, $form) {
     error_log('[SPA SUBMISSION] Entry ID: ' . $entry['id']);
-    error_log('[SPA SUBMISSION] Program: ' . rgar($entry, '2'));
-    error_log('[SPA SUBMISSION] Type: ' . rgar($entry, '34'));
-    error_log('[SPA SUBMISSION] Email: ' . rgar($entry, '16'));
-    error_log('[SPA SUBMISSION] Parent phone: ' . rgar($entry, '13'));
-    error_log('[SPA SUBMISSION] Client phone: ' . rgar($entry, '19'));
     
-    // Tu príde ďalšie spracovanie (CPT registrácie, atď.)
+    $resolved_type = rgar($entry, '34'); // spa_resolved_type
+    
+    error_log('[SPA SUBMISSION] Program: ' . rgar($entry, '2'));
+    error_log('[SPA SUBMISSION] Type: ' . $resolved_type);
+    
+    // Načítaj údaje z formulára
+    $first_name = rgar($entry, '6.3');
+    $last_name = rgar($entry, '6.6');
+    $birthdate = rgar($entry, '7'); // spa_member_birthdate
+    $health_notes = rgar($entry, '9'); // spa_member_health_restrictions
+    $address_street = rgar($entry, '17.1');
+    $address_city = rgar($entry, '17.3');
+    $address_zip = rgar($entry, '17.5');
+    
+    // CHILD flow
+    if ($resolved_type === 'child') {
+        $child_email = rgar($entry, '16');
+        $parent_email = rgar($entry, '12');
+        $parent_phone = rgar($entry, '13');
+        $parent_first_name = rgar($entry, '18.3');
+        $parent_last_name = rgar($entry, '18.6');
+        $birth_number = rgar($entry, '8');
+        
+        error_log('[SPA SUBMISSION] Child email: ' . $child_email);
+        error_log('[SPA SUBMISSION] Parent email: ' . $parent_email);
+        error_log('[SPA SUBMISSION] Parent phone: ' . $parent_phone);
+        
+        // 1. Vytvor/získaj parent usera
+        $parent_data = [
+            'user_email' => $parent_email,
+            'first_name' => $parent_first_name,
+            'last_name' => $parent_last_name,
+            'role' => 'spa_client',
+        ];
+        
+        $parent_meta = [
+            'phone' => $parent_phone,
+            'address_street' => $address_street,
+            'address_city' => $address_city,
+            'address_zip' => $address_zip,
+        ];
+        
+        $parent_user_id = spa_get_or_create_parent_user($parent_data, $parent_meta);
+        
+        if (!$parent_user_id) {
+            error_log('[SPA ERROR] Failed to create parent user');
+            return;
+        }
+        
+        // 2. Vytvor/získaj child usera
+        $child_data = [
+            'user_email' => $child_email,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'role' => 'spa_client',
+        ];
+        
+        // Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
+        $birthdate_iso = spa_convert_date_to_iso($birthdate);
+        
+        $child_meta = [
+            'birthdate' => $birthdate_iso,
+            'birth_number' => $birth_number,
+            'health_notes' => $health_notes,
+        ];
+        
+        $child_user_id = spa_get_or_create_child_user($child_data, $parent_user_id, $child_meta);
+        
+        if (!$child_user_id) {
+            error_log('[SPA ERROR] Failed to create child user');
+            return;
+        }
+        
+        // 3. Vygeneruj VS pre dieťa (ak ešte nemá)
+        spa_generate_and_store_vs($child_user_id);
+        
+        error_log('[SPA SUBMISSION] Child user_id: ' . $child_user_id);
+        error_log('[SPA SUBMISSION] Parent user_id: ' . $parent_user_id);
+    }
+    
+    // ADULT flow
+    if ($resolved_type === 'adult') {
+        $adult_email = rgar($entry, '16');
+        $adult_phone = rgar($entry, '19');
+        
+        error_log('[SPA SUBMISSION] Adult email: ' . $adult_email);
+        error_log('[SPA SUBMISSION] Adult phone: ' . $adult_phone);
+        
+        // 1. Vytvor/získaj adult usera
+        $adult_data = [
+            'user_email' => $adult_email,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'role' => 'spa_client',
+        ];
+        
+        // Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
+        $birthdate_iso = spa_convert_date_to_iso($birthdate);
+        
+        $adult_meta = [
+            'phone' => $adult_phone,
+            'address_street' => $address_street,
+            'address_city' => $address_city,
+            'address_zip' => $address_zip,
+            'birthdate' => $birthdate_iso,
+            'health_notes' => $health_notes,
+        ];
+        
+        $adult_user_id = spa_get_or_create_adult_user($adult_data, $adult_meta);
+        
+        if (!$adult_user_id) {
+            error_log('[SPA ERROR] Failed to create adult user');
+            return;
+        }
+        
+        // 2. Vygeneruj VS pre dospelého (ak ešte nemá)
+        spa_generate_and_store_vs($adult_user_id);
+        
+        error_log('[SPA SUBMISSION] Adult user_id: ' . $adult_user_id);
+    }
 }
 
 /**
@@ -285,6 +348,25 @@ function spa_debug_validation_result($validation_result) {
     }
     
     return $validation_result;
+}
+
+/**
+ * Helper: Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
+ */
+function spa_convert_date_to_iso($date_string) {
+    if (empty($date_string)) {
+        return '';
+    }
+    
+    // GF vracia dátum v formáte d.m.Y (napr. 15.03.2010)
+    $date = DateTime::createFromFormat('d.m.Y', $date_string);
+    
+    if (!$date) {
+        error_log('[SPA ERROR] Invalid date format: ' . $date_string);
+        return '';
+    }
+    
+    return $date->format('Y-m-d');
 }
 
 /**
