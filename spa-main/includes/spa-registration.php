@@ -12,6 +12,9 @@ if (!defined('ABSPATH')) {
  * Inicializácia registračného modulu
  */
 function spa_registration_init() {
+    // NOVÝ: Globálny bypass child/guardian polí pre adult flow
+    add_filter('gform_field_validation', 'spa_bypass_child_fields_for_adult', 5, 4);
+    
     // Bypass dynamických polí (mesto, program)
     add_filter('gform_field_validation', 'spa_bypass_dynamic_fields', 9, 4);
     
@@ -30,6 +33,49 @@ function spa_registration_init() {
     
     // DEBUG hook
     add_filter('gform_validation', 'spa_debug_validation_result', 999);
+}
+
+/**
+ * NOVÝ: Globálny bypass child/guardian polí pre adult flow
+ * Priorita 5 = pred všetkými ostatnými validáciami
+ */
+function spa_bypass_child_fields_for_adult($result, $value, $form, $field) {
+    // Načítaj resolved_type
+    $resolved_type = rgpost('input_34');
+    
+    // Ak ADULT → ignoruj všetky child/guardian polia
+    if ($resolved_type === 'adult') {
+        // Zoznam child/guardian field IDs (podľa logu)
+        $child_fields = [
+            6,   // Child Name (field 6)
+            7,   // Child Birth Date
+            12,  // Guardian Relation
+            13,  // Parent Phone
+            18,  // Guardian Name (podľa logu: "Meno, Priezvisko")
+            42,  // Neznáme child pole
+            // Pridaj ďalšie podľa potreby
+        ];
+        
+        if (in_array($field->id, $child_fields)) {
+            error_log('[SPA VALIDATION] Bypassing field ' . $field->id . ' (adult flow)');
+            $result['is_valid'] = true;
+            $result['message'] = '';
+        }
+    }
+    
+    // Ak CHILD → ignoruj adult-only polia
+    if ($resolved_type === 'child') {
+        $adult_fields = [
+            18, // Adult Name (ak je to adult-specific)
+            19, // Client Phone (adult)
+        ];
+        
+        // Poznámka: field 18 je v logu uvedené ako "Meno, Priezvisko"
+        // Ak je to guardian name, NEVYNECHÁVAJ ho pri child flow
+        // Úprava: odstránil som 18 z adult_fields, lebo patrí guardian
+    }
+    
+    return $result;
 }
 
 /**

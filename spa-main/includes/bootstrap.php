@@ -22,10 +22,7 @@ if (!defined('SPA_CONFIG_DIR')) {
     define('SPA_CONFIG_DIR', SPA_PLUGIN_DIR . 'spa-config/');
 }
 
-// Spätná kompatibilita - ak téma nepoužíva SPA_VERSION
-if (!defined('SPA_VERSION')) {
-    define('SPA_VERSION', SPA_PLUGIN_VERSION);
-}
+// POZNÁMKA: SPA_VERSION sa NENASTAVUJE - téma má prioritu
 
 /**
  * Načítanie konfigurácie field mappingu

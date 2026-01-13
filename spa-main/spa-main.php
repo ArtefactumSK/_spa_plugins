@@ -20,7 +20,9 @@ if (!defined('ABSPATH')) {
 }
 
 // Definovanie základných konštánt pluginu
-define('SPA_VERSION', '1.0.0');
+if (!defined('SPA_VERSION')) {
+    define('SPA_VERSION', '1.0.0');
+}
 define('SPA_PLUGIN_FILE', __FILE__);
 define('SPA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPA_PLUGIN_URL', plugin_dir_url(__FILE__));
