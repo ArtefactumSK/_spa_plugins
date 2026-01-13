@@ -66,16 +66,14 @@ function spa_bypass_child_fields_for_adult($result, $value, $form, $field) {
     
     // Ak CHILD → ignoruj adult-only polia
     if ($resolved_type === 'child') {
-        $adult_only_fields = [
-            16,  // E-mail účastníka (required) - len pre adult
-            19,  // Client Phone (adult)
+        $adult_fields = [
+            18, // Adult Name (ak je to adult-specific)
+            19, // Client Phone (adult)
         ];
         
-        if (in_array($field->id, $adult_only_fields)) {
-            error_log('[SPA VALIDATION] Bypassing adult-only field ' . $field->id . ' (child flow)');
-            $result['is_valid'] = true;
-            $result['message'] = '';
-        }
+        // Poznámka: field 18 je v logu uvedené ako "Meno, Priezvisko"
+        // Ak je to guardian name, NEVYNECHÁVAJ ho pri child flow
+        // Úprava: odstránil som 18 z adult_fields, lebo patrí guardian
     }
     
     return $result;

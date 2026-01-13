@@ -113,11 +113,6 @@ function spa_get_or_create_adult_user($data, $meta_data = []) {
         return $existing_user->ID;
     }
     
-    // Zabezpeč správnu rolu
-    if (!isset($data['role'])) {
-        $data['role'] = 'spa_client';
-    }
-    
     $data['user_login'] = spa_generate_unique_username($data['first_name'] . '.' . $data['last_name']);
     $user_id = wp_insert_user($data);
     
