@@ -132,30 +132,51 @@ function spa_enqueue_frontend_scripts() {
         ],
         'programCities' => $program_cities,
         'nonce' => wp_create_nonce('spa_ajax_nonce'),
-    ]);
-    // ⭐ FORCE inline programCities ako backup
-    $program_cities_json = json_encode($program_cities, JSON_UNESCAPED_UNICODE);
-    
-    wp_add_inline_script('spa-registration', "
-        console.log('[SPA Inline] Forcing programCities...');
-        if (typeof spaConfig === 'undefined') {
-            window.spaConfig = {
-                ajaxUrl: '" . admin_url('admin-ajax.php') . "',
-                fields: {
-                    spa_city: '" . ($field_config['spa_city'] ?? 'input_1') . "',
-                    spa_program: '" . ($field_config['spa_program'] ?? 'input_2') . "',
-                    spa_registration_type: '" . ($field_config['spa_registration_type'] ?? 'input_4') . "',
-                    spa_resolved_type: '" . ($field_config['spa_resolved_type'] ?? 'input_34') . "',
-                    spa_client_email: '" . ($field_config['spa_client_email'] ?? 'input_15') . "'
-                },
-                programCities: {$program_cities_json},
-                nonce: '" . wp_create_nonce('spa_ajax_nonce') . "'
-            };
-        } else {
-            spaConfig.programCities = {$program_cities_json};
-        }
-        console.log('[SPA Inline] spaConfig created:', spaConfig);
-    ", 'before');
+    ]);   
     
     error_log('[SPA Enqueue] === SCRIPTS DONE ===');
+}
+
+/**
+ * FORCE spaConfig v HEAD - PRED načítaním JS súborov
+ */
+add_action('wp_head', 'spa_force_config_in_head', 5);
+
+function spa_force_config_in_head() {
+    if (is_admin()) {
+        return;
+    }
+    
+    $field_config = spa_load_field_config();
+    $program_cities = spa_generate_program_cities_map();
+    $program_cities_json = json_encode($program_cities, JSON_UNESCAPED_UNICODE);
+    
+    $ajax_url = admin_url('admin-ajax.php');
+    $nonce = wp_create_nonce('spa_ajax_nonce');
+    
+    $spa_city = $field_config['spa_city'] ?? 'input_1';
+    $spa_program = $field_config['spa_program'] ?? 'input_2';
+    $spa_registration_type = $field_config['spa_registration_type'] ?? 'input_4';
+    $spa_resolved_type = $field_config['spa_resolved_type'] ?? 'input_34';
+    $spa_client_email = $field_config['spa_client_email'] ?? 'input_15';
+    
+    ?>
+    <script>
+    console.log('[SPA HEAD] Creating spaConfig...');
+    window.spaConfig = {
+        ajaxUrl: '<?php echo esc_js($ajax_url); ?>',
+        fields: {
+            spa_city: '<?php echo esc_js($spa_city); ?>',
+            spa_program: '<?php echo esc_js($spa_program); ?>',
+            spa_registration_type: '<?php echo esc_js($spa_registration_type); ?>',
+            spa_resolved_type: '<?php echo esc_js($spa_resolved_type); ?>',
+            spa_client_email: '<?php echo esc_js($spa_client_email); ?>'
+        },
+        programCities: <?php echo $program_cities_json; ?>,
+        nonce: '<?php echo esc_js($nonce); ?>'
+    };
+    console.log('[SPA HEAD] spaConfig created:', window.spaConfig);
+    console.log('[SPA HEAD] programCities:', window.spaConfig.programCities);
+    </script>
+    <?php
 }
