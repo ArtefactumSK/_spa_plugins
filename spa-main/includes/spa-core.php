@@ -440,3 +440,113 @@ function spa_format_age_display($age) {
     // Inak zobraz s čiarkou namiesto bodky
     return str_replace('.', ',', number_format($age, 1, '.', ''));
 }
+
+/**
+ * Pridať data-city atribút do program select options
+ */
+/* add_filter('gform_field_content', 'spa_add_city_to_program_options', 10, 5);
+
+function spa_add_city_to_program_options($content, $field, $value, $lead_id, $form_id) {
+    // Aplikuj len na Form ID 3 a Field ID 2 (program select)
+    if ($form_id != 3 || $field->id != 2) {
+        return $content;
+    }
+    
+    // Získaj všetky programy a ich mestá
+    $programs = get_posts([
+        'post_type' => 'spa_group',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+    ]);
+    
+    foreach ($programs as $program) {
+        // Získaj place_id programu
+        $place_id = get_post_meta($program->ID, 'spa_place_id', true);
+        
+        if (!$place_id) {
+            continue;
+        }
+        
+        // Získaj mesto z place
+        $city_name = get_post_meta($place_id, 'spa_place_city', true);
+        
+        if (empty($city_name)) {
+            continue;
+        }
+        
+        // Nájdi <option> tag pre tento program a pridaj data-city
+        // value="slug-programu"
+        $program_slug = $program->post_name;
+        
+        $pattern = '/<option value="' . preg_quote($program_slug, '/') . '"/';
+        $replacement = '<option value="' . $program_slug . '" data-city="' . esc_attr($city_name) . '"';
+        
+        $content = preg_replace($pattern, $replacement, $content);
+    }
+    
+    return $content;
+} */
+
+/**
+ * Pridať data-city atribút do programových choices (Gravity Forms)
+ * Viazané striktne na field ID = 2 (spa_program)
+ */
+add_filter('gform_pre_render', 'spa_add_city_to_program_choices', 20);
+add_filter('gform_pre_validation', 'spa_add_city_to_program_choices', 20);
+add_filter('gform_pre_submission_filter', 'spa_add_city_to_program_choices', 20);
+add_filter('gform_admin_pre_render', 'spa_add_city_to_program_choices', 20);
+
+function spa_add_city_to_program_choices($form) {
+
+    foreach ($form['fields'] as &$field) {
+
+        // Field ID 2 = spa_program
+        if ((int) $field->id !== 2) {
+            continue;
+        }
+
+        if (empty($field->choices) || !is_array($field->choices)) {
+            continue;
+        }
+
+        foreach ($field->choices as &$choice) {
+
+            $program_slug = $choice['value'] ?? '';
+
+            // Preskočiť prázdnu option
+            if ($program_slug === '') {
+                continue;
+            }
+
+            // CPT program
+            $program = get_page_by_path($program_slug, OBJECT, 'spa_group');
+            if (!$program) {
+                error_log('[SPA] Program not found: ' . $program_slug);
+                continue;
+            }
+
+            // Väzba na miesto
+            $place_id = get_post_meta($program->ID, 'spa_place_id', true);
+            if (!$place_id) {
+                error_log('[SPA] No place_id for program: ' . $program_slug);
+                continue;
+            }
+
+            // Mesto
+            $city_name = get_post_meta($place_id, 'spa_place_city', true);
+            if ($city_name === '') {
+                error_log('[SPA] No city for place_id: ' . $place_id);
+                continue;
+            }
+
+            // 🔑 JEDINÝ SPRÁVNY SPÔSOB
+            if (!isset($choice['attributes']) || !is_array($choice['attributes'])) {
+                $choice['attributes'] = [];
+            }
+
+            $choice['attributes']['data-city'] = esc_attr($city_name);
+        }
+    }
+
+    return $form;
+}

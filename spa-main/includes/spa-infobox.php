@@ -218,18 +218,75 @@ function spa_ajax_get_infobox_content() {
         }
     }
 
-    // Fallback: hľadaj podľa názvu
+    // Fallback: hľadaj podľa názvu + MESTO
     if (!$program_id && !empty($program_name)) {
-        $program_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} 
-                WHERE post_type = 'spa_group' 
-                AND post_title = %s 
-                AND post_status = 'publish' 
-                LIMIT 1",
-                $program_name
-            )
-        );
+        // Ak máme mesto, filtruj podľa neho
+        if (!empty($city_name)) {
+            // Nájdi place_id pre dané mesto
+            $place_ids = $wpdb->get_col(
+                $wpdb->prepare(
+                    "SELECT p.ID 
+                    FROM {$wpdb->posts} p
+                    INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                    WHERE p.post_type = 'spa_place'
+                    AND p.post_status = 'publish'
+                    AND pm.meta_key = 'spa_place_city'
+                    AND pm.meta_value = %s",
+                    $city_name
+                )
+            );
+            
+            spa_log('Place IDs for city', [
+                'city_name' => $city_name,
+                'place_ids' => $place_ids
+            ]);
+            
+            if (!empty($place_ids)) {
+                $place_ids_str = implode(',', array_map('intval', $place_ids));
+                
+                // Nájdi program v tomto mieste
+                $program_id = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT p.ID 
+                        FROM {$wpdb->posts} p
+                        INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                        WHERE p.post_type = 'spa_group'
+                        AND p.post_status = 'publish'
+                        AND p.post_title = %s
+                        AND pm.meta_key = 'spa_place_id'
+                        AND pm.meta_value IN ({$place_ids_str})
+                        LIMIT 1",
+                        $program_name
+                    )
+                );
+                
+                spa_log('Program lookup WITH city filter', [
+                    'program_name' => $program_name,
+                    'city_name' => $city_name,
+                    'place_ids' => $place_ids_str,
+                    'found_program_id' => $program_id
+                ]);
+            } else {
+                spa_log('No places found for city', ['city_name' => $city_name]);
+            }
+        } else {
+            // Bez mesta - hľadaj globálne (pôvodná logika)
+            $program_id = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT ID FROM {$wpdb->posts} 
+                    WHERE post_type = 'spa_group' 
+                    AND post_title = %s 
+                    AND post_status = 'publish' 
+                    LIMIT 1",
+                    $program_name
+                )
+            );
+            
+            spa_log('Program lookup WITHOUT city filter', [
+                'program_name' => $program_name,
+                'found_program_id' => $program_id
+            ]);
+        }
     }
 
     spa_log('Program ID lookup', [

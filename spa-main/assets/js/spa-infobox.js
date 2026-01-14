@@ -302,35 +302,41 @@
             cityField.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 
+                // ⭐ VŽDY RESETUJ PROGRAM pri zmene mesta (aj keď len ZMENA, nie vymazanie)
+                wizardData.program_name = '';
+                wizardData.program_id = null;
+                wizardData.program_age = '';
+                wizardData.frequency = '';
+                window.spaFormState.program = false;
+                window.spaFormState.frequency = false;
+                
+                // Vyčisti program select
+                const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+                if (programField) {
+                    programField.value = '';
+                }
+                
+                // VYČISTI frekvenčný selector
+                const frequencySelector = document.querySelector('.spa-frequency-selector');
+                if (frequencySelector) {
+                    frequencySelector.innerHTML = '';
+                }
+                
+                // ⭐ VYČISTI VŠETKY POLIA V SEKCIÁCH
+                clearAllSectionFields();
+                
                 if (this.value && this.value !== '0' && this.value !== '') {
                     wizardData.city_name = selectedOption.text;
                     window.spaFormState.city = true;
                     currentState = 1;
                 } else {
-                    // ⭐ KOMPLETNÝ RESET
+                    // Úplné vymazanie mesta
                     wizardData.city_name = '';
-                    wizardData.program_name = '';
-                    wizardData.program_id = null;
-                    wizardData.program_age = '';
-                    wizardData.frequency = '';
-                    currentState = 0;
-                    
                     window.spaFormState.city = false;
-                    window.spaFormState.program = false;
-                    window.spaFormState.frequency = false;
-
-                    // VYČISTI frekvenčný selector
-                    const frequencySelector = document.querySelector('.spa-frequency-selector');
-                    if (frequencySelector) {
-                        frequencySelector.innerHTML = '';
-                    }
-                    
-                    // ⭐ VYČISTI VŠETKY POLIA V SEKCIÁCH
-                    clearAllSectionFields();
+                    currentState = 0;
                 }
                 
                 loadInfoboxContent(currentState);
-                
                 updateSectionVisibility();
             });
         }
