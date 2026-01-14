@@ -104,11 +104,18 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
-    wp_enqueue_script(
+    /* wp_enqueue_script(
         'spa-infobox',
         SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
         ['spa-registration'],
         SPA_PLUGIN_VERSION,
+        true
+    ); */
+    wp_enqueue_script(
+        'spa-infobox',
+        SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
+        ['spa-registration'],
+        '1.0.2',  // ← HARDCODED VERSION (zmeniť pri každej zmene JS)
         true
     );
     
