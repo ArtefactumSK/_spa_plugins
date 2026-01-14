@@ -497,6 +497,8 @@ add_filter('gform_pre_submission_filter', 'spa_add_city_to_program_choices', 20)
 add_filter('gform_admin_pre_render', 'spa_add_city_to_program_choices', 20);
 
 function spa_add_city_to_program_choices($form) {
+    error_log('[SPA DEBUG] spa_add_city_to_program_choices RUNNING for form ID: ' . $form['id']);
+
 
     foreach ($form['fields'] as &$field) {
 
