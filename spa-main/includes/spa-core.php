@@ -563,6 +563,8 @@ function spa_add_city_to_program_choices($form) {
  * Používa sa pre JS filtering programov podľa mesta
  */
 function spa_generate_program_cities_map() {
+    error_log('[SPA Map] === FUNCTION CALLED ===');
+    
     $programs = get_posts(array(
         'post_type'      => 'spa_group',
         'posts_per_page' => -1,
@@ -594,6 +596,7 @@ function spa_generate_program_cities_map() {
             error_log('[SPA Map] Program ID ' . $program->ID . ' → ' . $combined_name);
         }
     }
-    
+    error_log('[SPA Map] Total programs mapped: ' . count($map));
+    error_log('[SPA Map] Map content: ' . print_r($map, true));
     return $map;
 }

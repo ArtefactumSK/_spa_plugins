@@ -119,8 +119,13 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
+    error_log('[SPA Bootstrap] === ENQUEUE SCRIPTS CALLED ===');
+
     // ⭐ NOVÉ: Generovanie JS mapy program → mesto
     $program_cities = spa_generate_program_cities_map();
+
+    error_log('[SPA Bootstrap] Program cities count: ' . count($program_cities));
+    error_log('[SPA Bootstrap] Program cities: ' . print_r($program_cities, true));
     
     wp_localize_script('spa-registration', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
