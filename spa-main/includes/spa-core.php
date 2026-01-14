@@ -574,26 +574,39 @@ function spa_generate_program_cities_map() {
     $map = array();
     
     foreach ($programs as $program) {
-        // Získaj VŠETKY taxonomy terms pre program
-        $places = get_the_terms($program->ID, 'spa_place');
+        // ⭐ NOVÝ SYSTÉM: Získaj miesto z postmeta
+        $place_id = get_post_meta($program->ID, 'spa_place_id', true);
         
-        if ($places && !is_wp_error($places)) {
-            // Zoraď podľa názvu (konzistentné s city selectom)
-            usort($places, function($a, $b) {
-                return strcmp($a->name, $b->name);
-            });
+        if ($place_id) {
+            // Získaj mesto z miesta (spa_place CPT)
+            $city_name = get_post_meta($place_id, 'spa_place_city', true);
             
-            // Vytvor kombinovaný text: "Košice, september-jún, ZŠ Drábova 3"
-            $place_names = array_map(function($term) {
-                return $term->name;
-            }, $places);
+            if ($city_name) {
+                $map[$program->ID] = $city_name;
+                error_log('[SPA Map] Program ID ' . $program->ID . ' → ' . $city_name);
+            } else {
+                error_log('[SPA Map] Program ID ' . $program->ID . ' → NO CITY in place_id ' . $place_id);
+            }
+        } else {
+            // ⭐ FALLBACK: Starý systém (taxonomy)
+            $places = get_the_terms($program->ID, 'spa_place');
             
-            $combined_name = implode(', ', $place_names);
-            
-            // ⭐ KĽÚČ = program ID (nie slug!)
-            $map[$program->ID] = $combined_name;
-            
-            error_log('[SPA Map] Program ID ' . $program->ID . ' → ' . $combined_name);
+            if ($places && !is_wp_error($places)) {
+                usort($places, function($a, $b) {
+                    return strcmp($a->name, $b->name);
+                });
+                
+                $place_names = array_map(function($term) {
+                    return $term->name;
+                }, $places);
+                
+                $combined_name = implode(', ', $place_names);
+                $map[$program->ID] = $combined_name;
+                
+                error_log('[SPA Map] Program ID ' . $program->ID . ' → ' . $combined_name . ' (taxonomy fallback)');
+            } else {
+                error_log('[SPA Map] Program ID ' . $program->ID . ' → NO PLACE');
+            }
         }
     }
     error_log('[SPA Map] Total programs mapped: ' . count($map));

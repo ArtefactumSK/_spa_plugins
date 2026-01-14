@@ -84,18 +84,21 @@ function spa_init() {
 add_action('plugins_loaded', 'spa_init', 5); // Priorita 5 = skoršie ako téma
 
 /**
- * Enqueue JavaScript pre Gravity Forms
+ * Enqueue scripts - PRIAMO cez wp_enqueue_scripts
  */
-function spa_enqueue_gf_scripts($form) {
-    // ⭐ GUARD: Zabraň duplicitným volániam
-    static $enqueued = false;
-    
-    if ($enqueued) {
+add_action('wp_enqueue_scripts', 'spa_enqueue_frontend_scripts', 20);
+
+function spa_enqueue_frontend_scripts() {
+    // Len pre frontend
+    if (is_admin()) {
         return;
     }
     
+    error_log('[SPA Enqueue] === SCRIPTS START ===');
+    
     $field_config = spa_load_field_config();
     
+    // 1. Enqueue JS súbory
     wp_enqueue_script(
         'spa-registration',
         SPA_PLUGIN_URL . 'assets/js/spa-registration-summary.js',
@@ -104,29 +107,20 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
-    /* wp_enqueue_script(
-        'spa-infobox',
-        SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
-        ['spa-registration'],
-        SPA_PLUGIN_VERSION,
-        true
-    ); */
     wp_enqueue_script(
         'spa-infobox',
         SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
         ['spa-registration'],
-        '1.0.2',  // ← HARDCODED VERSION (zmeniť pri každej zmene JS)
+        '1.0.4',
         true
     );
     
-    error_log('[SPA Bootstrap] === ENQUEUE SCRIPTS CALLED ===');
-
-    // ⭐ NOVÉ: Generovanie JS mapy program → mesto
+    // 2. Generuj mapu
     $program_cities = spa_generate_program_cities_map();
-
-    error_log('[SPA Bootstrap] Program cities count: ' . count($program_cities));
-    error_log('[SPA Bootstrap] Program cities: ' . print_r($program_cities, true));
     
+    error_log('[SPA Enqueue] Program cities count: ' . count($program_cities));
+    
+    // 3. Localize HNEĎ po enqueue
     wp_localize_script('spa-registration', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'fields' => [
@@ -136,11 +130,20 @@ function spa_enqueue_gf_scripts($form) {
             'spa_resolved_type' => $field_config['spa_resolved_type'] ?? '',
             'spa_client_email' => $field_config['spa_client_email'] ?? '',
         ],
-        'programCities' => $program_cities, // ⭐ NOVÉ
+        'programCities' => $program_cities,
         'nonce' => wp_create_nonce('spa_ajax_nonce'),
     ]);
+    // ⭐ FORCE inline programCities ako backup
+    $program_cities_json = json_encode($program_cities, JSON_UNESCAPED_UNICODE);
     
-    // ⭐ Označ, že bolo enqueued
-    $enqueued = true;
+    wp_add_inline_script('spa-registration', "
+        console.log('[SPA Inline] Forcing programCities...');
+        if (typeof spaConfig === 'undefined') {
+            window.spaConfig = {};
+        }
+        spaConfig.programCities = {$program_cities_json};
+        console.log('[SPA Inline] programCities set:', spaConfig.programCities);
+    ", 'after');
+    
+    error_log('[SPA Enqueue] === SCRIPTS DONE ===');
 }
-add_action('gform_enqueue_scripts', 'spa_enqueue_gf_scripts', 10, 1);
