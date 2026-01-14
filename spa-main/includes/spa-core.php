@@ -552,3 +552,40 @@ function spa_add_city_to_program_choices($form) {
 
     return $form;
 }
+
+/**
+ * Generovanie mapy program_slug → city_name pre JS
+ * 
+ * @return array Asociatívne pole ['program-slug' => 'Mesto']
+ */
+function spa_generate_program_cities_map() {
+    $map = [];
+    
+    // Získaj všetky publikované programy
+    $programs = get_posts([
+        'post_type' => 'spa_group',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+    ]);
+    
+    foreach ($programs as $program) {
+        // Získaj place_id
+        $place_id = get_post_meta($program->ID, 'spa_place_id', true);
+        
+        if (!$place_id) {
+            continue;
+        }
+        
+        // Získaj mesto
+        $city_name = get_post_meta($place_id, 'spa_place_city', true);
+        
+        if (empty($city_name)) {
+            continue;
+        }
+        
+        // Pridaj do mapy
+        $map[$program->post_name] = $city_name;
+    }
+    
+    return $map;
+}

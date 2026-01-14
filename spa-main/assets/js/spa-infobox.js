@@ -301,8 +301,9 @@
         if (cityField) {
             cityField.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
+                const selectedCityName = selectedOption.text; // ⭐ TEXT mesta, nie value
                 
-                // ⭐ VŽDY RESETUJ PROGRAM pri zmene mesta (aj keď len ZMENA, nie vymazanie)
+                // ⭐ VŽDY RESETUJ PROGRAM pri zmene mesta
                 wizardData.program_name = '';
                 wizardData.program_id = null;
                 wizardData.program_age = '';
@@ -314,6 +315,9 @@
                 const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
                 if (programField) {
                     programField.value = '';
+                    
+                    // ⭐ FILTRUJ options podľa mesta
+                    spa_filter_program_options(programField, selectedCityName);
                 }
                 
                 // VYČISTI frekvenčný selector
@@ -326,7 +330,7 @@
                 clearAllSectionFields();
                 
                 if (this.value && this.value !== '0' && this.value !== '') {
-                    wizardData.city_name = selectedOption.text;
+                    wizardData.city_name = selectedCityName;
                     window.spaFormState.city = true;
                     currentState = 1;
                 } else {
@@ -1236,4 +1240,55 @@ function renderInfobox(data, icons, capacityFree, price) {
         console.log('[SPA Clear] Cleared', participantInputs.length, 'fields');
     }
 
+    /**
+     * Filtrovanie programových options podľa mesta
+     * @param {HTMLSelectElement} programField Program select element
+     * @param {string} cityName Názov vybraného mesta
+     */
+    function spa_filter_program_options(programField, cityName) {
+        if (!spaConfig.programCities) {
+            console.warn('[SPA] programCities map not available');
+            return;
+        }
+        
+        const options = programField.querySelectorAll('option');
+        let visibleCount = 0;
+        
+        options.forEach(option => {
+            const programSlug = option.value;
+            
+            // Prázdna option - vždy zobraz
+            if (!programSlug) {
+                option.style.display = '';
+                return;
+            }
+            
+            // Získaj mesto pre tento program
+            const programCity = spaConfig.programCities[programSlug];
+            
+            if (!programCity) {
+                console.warn('[SPA] No city found for program:', programSlug);
+                option.style.display = 'none';
+                return;
+            }
+            
+            // Porovnaj mesto
+            if (programCity === cityName) {
+                option.style.display = '';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        console.log('[SPA] Filtered programs for city:', cityName, '- visible:', visibleCount);
+        
+        // Ak žiadne programy, disable select
+        if (visibleCount === 0) {
+            programField.disabled = true;
+            console.warn('[SPA] No programs available for city:', cityName);
+        } else {
+            programField.disabled = false;
+        }
+    }
 })();

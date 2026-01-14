@@ -112,6 +112,9 @@ function spa_enqueue_gf_scripts($form) {
         true
     );
     
+    // ⭐ NOVÉ: Generovanie JS mapy program → mesto
+    $program_cities = spa_generate_program_cities_map();
+    
     wp_localize_script('spa-registration', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'fields' => [
@@ -121,6 +124,7 @@ function spa_enqueue_gf_scripts($form) {
             'spa_resolved_type' => $field_config['spa_resolved_type'] ?? '',
             'spa_client_email' => $field_config['spa_client_email'] ?? '',
         ],
+        'programCities' => $program_cities, // ⭐ NOVÉ
         'nonce' => wp_create_nonce('spa_ajax_nonce'),
     ]);
     
