@@ -1,14 +1,12 @@
 <?php
 /**
  * SPA System Bootstrap
- * Inicializácia pluginu a načítanie závislostí
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Definovanie konštánt pluginu – POUŽITIE VLASTNÉHO PREFIXU
 if (!defined('SPA_PLUGIN_VERSION')) {
     define('SPA_PLUGIN_VERSION', '1.0.0');
 }
@@ -22,26 +20,14 @@ if (!defined('SPA_CONFIG_DIR')) {
     define('SPA_CONFIG_DIR', SPA_PLUGIN_DIR . 'spa-config/');
 }
 
-// POZNÁMKA: SPA_VERSION sa NENASTAVUJE - téma má prioritu
-
-/**
- * Načítanie konfigurácie field mappingu
- * Vracia array s mapovaním logických názvov na GF input_ID
- */
 function spa_load_field_config() {
     $config_file = SPA_CONFIG_DIR . 'fields.php';
-    
     if (!file_exists($config_file)) {
         return [];
     }
-    
     return include $config_file;
 }
 
-/**
- * Kontrola závislostí
- * Overuje, či je Gravity Forms aktívny
- */
 function spa_check_dependencies() {
     if (!class_exists('GFForms')) {
         add_action('admin_notices', function() {
@@ -54,56 +40,41 @@ function spa_check_dependencies() {
     return true;
 }
 
-/**
- * Inicializácia pluginu
- */
 function spa_init() {
-    // Kontrola závislostí
     if (!spa_check_dependencies()) {
         return;
     }
     
-    // Načítanie core súborov
     require_once SPA_PLUGIN_DIR . 'includes/spa-helpers.php';
     require_once SPA_PLUGIN_DIR . 'includes/spa-core.php';
     require_once SPA_PLUGIN_DIR . 'includes/spa-registration.php';
     require_once SPA_PLUGIN_DIR . 'includes/spa-infobox.php';
     
-    // Inicializácia registračného modulu
     spa_registration_init();
-    
-    // Inicializácia infobox modulu
     spa_infobox_init();
 
-    // Inicializácia user managementu
     require_once SPA_PLUGIN_DIR . 'includes/spa-user-create.php';
     require_once SPA_PLUGIN_DIR . 'includes/spa-user-management.php';
     spa_user_management_init();
 }
 
-add_action('plugins_loaded', 'spa_init', 5); // Priorita 5 = skoršie ako téma
+add_action('plugins_loaded', 'spa_init', 5);
 
 /**
- * Enqueue scripts - PRIAMO cez wp_enqueue_scripts
+ * Enqueue scripts - MINIMÁLNE
  */
-add_action('wp_enqueue_scripts', 'spa_enqueue_frontend_scripts', 20);
+add_action('wp_enqueue_scripts', 'spa_enqueue_scripts', 20);
 
-function spa_enqueue_frontend_scripts() {
-    // Len pre frontend
+function spa_enqueue_scripts() {
     if (is_admin()) {
         return;
     }
     
-    error_log('[SPA Enqueue] === SCRIPTS START ===');
-    
-    $field_config = spa_load_field_config();
-    
-    // 1. Enqueue JS súbory
     wp_enqueue_script(
         'spa-registration',
         SPA_PLUGIN_URL . 'assets/js/spa-registration-summary.js',
         ['jquery'],
-        SPA_PLUGIN_VERSION,
+        '1.1.0',
         true
     );
     
@@ -111,115 +82,21 @@ function spa_enqueue_frontend_scripts() {
         'spa-infobox',
         SPA_PLUGIN_URL . 'assets/js/spa-infobox.js',
         ['spa-registration'],
-        '1.0.5',
+        '1.1.0',
         true
     );
-    
-    // 2. Generuj mapu
+}
+
+/**
+ * AJAX endpoint pre získanie programCities mapy
+ */
+add_action('wp_ajax_spa_get_program_cities', 'spa_ajax_get_program_cities');
+add_action('wp_ajax_nopriv_spa_get_program_cities', 'spa_ajax_get_program_cities');
+
+function spa_ajax_get_program_cities() {
     $program_cities = spa_generate_program_cities_map();
     
-    error_log('[SPA Enqueue] Program cities count: ' . count($program_cities));
-    
-    // 3. Localize
-    wp_localize_script('spa-registration', 'spaConfig', [
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'fields' => [
-            'spa_city' => $field_config['spa_city'] ?? 'input_1',
-            'spa_program' => $field_config['spa_program'] ?? 'input_2',
-            'spa_registration_type' => $field_config['spa_registration_type'] ?? 'input_4',
-            'spa_resolved_type' => $field_config['spa_resolved_type'] ?? 'input_34',
-            'spa_client_email' => $field_config['spa_client_email'] ?? 'input_15',
-        ],
-        'programCities' => $program_cities,
-        'nonce' => wp_create_nonce('spa_ajax_nonce'),
+    wp_send_json_success([
+        'programCities' => $program_cities
     ]);
-    
-    error_log('[SPA Enqueue] === SCRIPTS DONE ===');
-}
-
-/**
- * FORCE programCities do footer - GARANTOVANE
- */
-add_action('wp_print_footer_scripts', 'spa_force_program_cities', 1);
-
-function spa_force_program_cities() {
-    if (is_admin()) {
-        return;
-    }
-    
-    $program_cities = spa_generate_program_cities_map();
-    $program_cities_json = json_encode($program_cities, JSON_UNESCAPED_UNICODE);
-    
-    ?>
-    <script id="spa-force-config">
-    (function() {
-        console.log('[SPA FORCE] Fixing programCities...');
-        if (typeof spaConfig === 'undefined') {
-            console.warn('[SPA FORCE] spaConfig does not exist! Creating...');
-            window.spaConfig = {
-                ajaxUrl: '<?php echo esc_js(admin_url('admin-ajax.php')); ?>',
-                fields: {
-                    spa_city: 'input_1',
-                    spa_program: 'input_2',
-                    spa_registration_type: 'input_4',
-                    spa_resolved_type: 'input_34',
-                    spa_client_email: 'input_15'
-                },
-                programCities: <?php echo $program_cities_json; ?>,
-                nonce: '<?php echo esc_js(wp_create_nonce('spa_ajax_nonce')); ?>'
-            };
-        } else if (!spaConfig.programCities || Object.keys(spaConfig.programCities).length === 0) {
-            console.warn('[SPA FORCE] spaConfig exists but programCities is empty! Fixing...');
-            spaConfig.programCities = <?php echo $program_cities_json; ?>;
-        }
-        console.log('[SPA FORCE] Final spaConfig:', spaConfig);
-        console.log('[SPA FORCE] programCities count:', Object.keys(spaConfig.programCities || {}).length);
-    })();
-    </script>
-    <?php
-}
-
-/**
- * FORCE spaConfig v HEAD - PRED načítaním JS súborov
- */
-add_action('wp_head', 'spa_force_config_in_footer', 5);
-
-function spa_force_config_in_footer() {
-    error_log('[SPA HEAD] Function called - is_admin: ' . (is_admin() ? 'YES' : 'NO'));
-    if (is_admin()) {
-        return;
-    }
-    
-    $field_config = spa_load_field_config();
-    $program_cities = spa_generate_program_cities_map();
-    $program_cities_json = json_encode($program_cities, JSON_UNESCAPED_UNICODE);
-    
-    $ajax_url = admin_url('admin-ajax.php');
-    $nonce = wp_create_nonce('spa_ajax_nonce');
-    
-    $spa_city = $field_config['spa_city'] ?? 'input_1';
-    $spa_program = $field_config['spa_program'] ?? 'input_2';
-    $spa_registration_type = $field_config['spa_registration_type'] ?? 'input_4';
-    $spa_resolved_type = $field_config['spa_resolved_type'] ?? 'input_34';
-    $spa_client_email = $field_config['spa_client_email'] ?? 'input_15';
-    
-    ?>
-    <script>
-    console.log('[SPA HEAD] Creating spaConfig...');
-    window.spaConfig = {
-        ajaxUrl: '<?php echo esc_js($ajax_url); ?>',
-        fields: {
-            spa_city: '<?php echo esc_js($spa_city); ?>',
-            spa_program: '<?php echo esc_js($spa_program); ?>',
-            spa_registration_type: '<?php echo esc_js($spa_registration_type); ?>',
-            spa_resolved_type: '<?php echo esc_js($spa_resolved_type); ?>',
-            spa_client_email: '<?php echo esc_js($spa_client_email); ?>'
-        },
-        programCities: <?php echo $program_cities_json; ?>,
-        nonce: '<?php echo esc_js($nonce); ?>'
-    };
-    console.log('[SPA HEAD] spaConfig created:', window.spaConfig);
-    console.log('[SPA HEAD] programCities:', window.spaConfig.programCities);
-    </script>
-    <?php
 }
