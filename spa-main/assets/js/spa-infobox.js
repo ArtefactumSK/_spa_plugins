@@ -409,7 +409,9 @@
                 }
                 
                 loadInfoboxContent(currentState);
+                
                 updateSectionVisibility();
+                updatePriceSummary(); // ⭐ AKTUALIZUJ PREHĽAD
             }
         });
         
@@ -933,11 +935,12 @@ function renderInfobox(data, icons, capacityFree, price) {
                 if (this.checked) {
                     window.spaFormState.frequency = true;
                     
-                    updateSectionVisibility(); 
+                    updateSectionVisibility();
+                    updatePriceSummary(); // ⭐ AKTUALIZUJ PREHĽAD
                     console.log('[SPA Frequency] Selected:', this.value);
                 }
             });
-            
+
             const span = document.createElement('span');
             span.textContent = `${freq.label} – ${freq.price.toFixed(2).replace('.', ',')} €`;
             
@@ -1332,5 +1335,92 @@ function renderInfobox(data, icons, capacityFree, price) {
         
         console.log('[SPA Clear] Cleared', participantInputs.length, 'fields');
     }
+
+    /**
+     * Aktualizácia PREHĽADU REGISTRÁCIE (.spa-price-summary)
+     */
+    function updatePriceSummary() {
+        const summaryContainer = document.querySelector('.spa-price-summary');
+        
+        if (!summaryContainer) {
+            return; // Blok neexistuje vo formulári
+        }
+
+        // Načítaj meno účastníka z inputov
+        const firstNameInput = document.querySelector('input[name="input_6.3"]');
+        const lastNameInput = document.querySelector('input[name="input_6.6"]');
+        const participantName = [
+            firstNameInput?.value.trim(),
+            lastNameInput?.value.trim()
+        ].filter(Boolean).join(' ') || '—';
+
+        // Načítaj typ účastníka
+        const resolvedTypeField = document.querySelector('input[name="input_34"]');
+        const participantType = resolvedTypeField?.value === 'child' ? 'Dieťa (mladší ako 18 rokov)' : 'Dospelá osoba (18+ rokov)';
+
+        // Načítaj vybranú frekvenciu
+        const selectedFrequency = document.querySelector('input[name="spa_frequency"]:checked');
+        let frequencyLabel = '—';
+        let frequencyPrice = '';
+        
+        if (selectedFrequency) {
+            const parentLabel = selectedFrequency.parentElement;
+            const fullText = parentLabel?.textContent.trim() || '';
+            // Očakávaný formát: "1× týždenne – 50,00 €"
+            frequencyLabel = fullText;
+        }
+
+        // Zostavenie HTML
+        let html = '<h3>Prehľad registrácie</h3>';
+        html += '<dl class="spa-summary-list">';
+        
+        if (participantName !== '—') {
+            html += `<dt>Meno účastníka:</dt><dd><strong>${participantName}</strong></dd>`;
+        }
+        
+        if (wizardData.program_name) {
+            html += `<dt>Vybraný program:</dt><dd>${wizardData.program_name}</dd>`;
+        }
+        
+        if (wizardData.city_name) {
+            html += `<dt>Miesto:</dt><dd>${wizardData.city_name}</dd>`;
+        }
+        
+        if (participantType) {
+            html += `<dt>Veková kategória:</dt><dd>${participantType}</dd>`;
+        }
+        
+        if (frequencyLabel !== '—') {
+            html += `<dt>Frekvencia / Cena:</dt><dd><strong>${frequencyLabel}</strong></dd>`;
+        }
+        
+        html += `<dt>Platba:</dt><dd>Platba po schválení registrácie</dd>`;
+        html += '</dl>';
+
+        summaryContainer.innerHTML = html;
+        
+        console.log('[SPA Price Summary] Updated:', {
+            participantName,
+            program: wizardData.program_name,
+            city: wizardData.city_name,
+            type: participantType,
+            frequency: frequencyLabel
+        });
+    }
+
+    // ⭐ SPUSTI updatePriceSummary pri zmenách
+    document.addEventListener('change', function(e) {
+        // Trigger pri zmene mena, programu, frekvencie
+        if (e.target.matches('input[name="input_6.3"], input[name="input_6.6"], input[name="spa_frequency"]')) {
+            setTimeout(updatePriceSummary, 100);
+        }
+    });
+
+    // Trigger pri blur na meno (pre istotu)
+    document.addEventListener('blur', function(e) {
+        if (e.target.matches('input[name="input_6.3"], input[name="input_6.6"]')) {
+            setTimeout(updatePriceSummary, 100);
+        }
+    }, true);
 
 })();
