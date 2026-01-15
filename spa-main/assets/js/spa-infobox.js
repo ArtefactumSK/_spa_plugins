@@ -1370,8 +1370,28 @@ function renderInfobox(data, icons, capacityFree, price) {
             lastNameInput?.value.trim()
         ].filter(Boolean).join(' ');
     
-        const addressInput = document.querySelector('input[name="input_17"]');
-        const address = addressInput?.value.trim();
+        // Adresa môže byť text field ALEBO address field
+        let address = '';
+        const addressSingleInput = document.querySelector('input[name="input_17"]');
+        const addressStreetInput = document.querySelector('input[name="input_17.1"]');
+        const addressCityInput = document.querySelector('input[name="input_17.3"]');
+
+        if (addressSingleInput) {
+            // Jednoduchý text field
+            address = addressSingleInput.value.trim();
+        } else if (addressStreetInput || addressCityInput) {
+            // Address field - skombinuj ulicu + PSČ + mesto
+            const parts = [];
+            if (addressStreetInput) parts.push(addressStreetInput.value.trim());
+            if (addressCityInput) parts.push(addressCityInput.value.trim());
+            address = parts.filter(Boolean).join(', ');
+        }
+
+        console.log('[SPA Summary] Address:', address, {
+            single: !!addressSingleInput,
+            street: addressStreetInput?.value,
+            city: addressCityInput?.value
+        });
     
         // Vek
         const birthdateInput = document.querySelector('input[name="input_7"]');
