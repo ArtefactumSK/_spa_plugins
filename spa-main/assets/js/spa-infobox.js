@@ -1350,8 +1350,11 @@ function renderInfobox(data, icons, capacityFree, price) {
         const summaryContainer = document.querySelector('.spa-price-summary');
         
         if (!summaryContainer) {
+            console.log('[SPA Summary] Container NOT FOUND');
             return;
         }
+        
+        console.log('[SPA Summary] ========== START ==========');
     
         // Načítaj typ účastníka (child/adult)
         const resolvedTypeField = document.querySelector('input[name="input_34"]');
@@ -1468,9 +1471,25 @@ function renderInfobox(data, icons, capacityFree, price) {
             html += `<p><strong>Meno a adresa účastníka:</strong> ${participantName}, ${address}</p>`;
         }
 
-        // 2. Vek účastníka
-        if (age) {
-            html += `<p><strong>Vek účastníka:</strong> ${age}</p>`;
+        // 2. Vek účastníka (len pre CHILD alebo ak má program age_min)
+        const hasAgeMin = window.infoboxData?.program?.age_min;
+
+        if (age && (isChild || hasAgeMin)) {
+            // Validácia veku vs veková kategória
+            let ageWarning = '';
+            if (ageCategory && hasAgeMin) {
+                const ageYears = parseInt(age);
+                const ageMin = parseFloat(window.infoboxData.program.age_min);
+                const ageMax = parseFloat(window.infoboxData.program.age_max);
+                
+                if (ageMax && (ageYears < ageMin || ageYears > ageMax)) {
+                    ageWarning = ' ⚠️ Pozor: Vek nezodpovedá vekovej kategórii programu!';
+                } else if (!ageMax && ageYears < ageMin) {
+                    ageWarning = ' ⚠️ Pozor: Vek nezodpovedá vekovej kategórii programu!';
+                }
+            }
+            
+            html += `<p><strong>Vek účastníka:</strong> ${age}${ageWarning}</p>`;
         }
 
         // 3. Zákonný zástupca (len child, len ak sú všetky 3 hodnoty)
