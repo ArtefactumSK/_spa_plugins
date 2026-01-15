@@ -503,8 +503,23 @@ function spa_add_city_to_program_choices($form) {
     $selected_city = '';
     if (isset($_GET['spa_city']) && !empty($_GET['spa_city'])) {
         $selected_city = sanitize_text_field($_GET['spa_city']);
-    } elseif (isset($_POST['spa_city']) && !empty($_POST['spa_city'])) {
-        $selected_city = sanitize_text_field($_POST['spa_city']);
+        error_log('[SPA Filter] GET spa_city: ' . $selected_city);
+    } elseif (isset($_POST['input_1']) && !empty($_POST['input_1'])) {
+        // ⭐ SPRÁVNE: Čítaj z POST input_1 (nie spa_city!)
+        $city_value = sanitize_text_field($_POST['input_1']);
+        
+        // Nájdi text labelu pre túto hodnotu
+        foreach ($form['fields'] as $f) {
+            if ((int) $f->id === 1 && !empty($f->choices)) {
+                foreach ($f->choices as $c) {
+                    if ($c['value'] === $city_value) {
+                        $selected_city = $c['text'];
+                        error_log('[SPA Filter] POST input_1: ' . $city_value . ' → ' . $selected_city);
+                        break 2;
+                    }
+                }
+            }
+        }
     }
 
     foreach ($form['fields'] as &$field) {
@@ -524,8 +539,8 @@ function spa_add_city_to_program_choices($form) {
 
             $program_slug = $choice['value'] ?? '';
 
-            // Prázdna option – vždy zachovať
-            if ($program_slug === '') {
+            // Prázdna option ALEBO placeholder – vždy zachovať
+            if ($program_slug === '' || strpos($program_slug, '_waiting') === 0 || strpos($program_slug, '_placeholder') === 0) {
                 $filtered_choices[] = $choice;
                 continue;
             }
@@ -561,14 +576,18 @@ function spa_add_city_to_program_choices($form) {
                 $choice['attributes'] = [];
             }
             $choice['attributes']['data-city'] = esc_attr($city_name);
+            $choice['attributes']['data-age-min'] = get_post_meta($program->ID, 'spa_age_from', true);
 
             $filtered_choices[] = $choice;
         }
 
         // Prepísať choices filtrovaným zoznamom
         $field->choices = $filtered_choices;
+        
+        // ⭐ LOG VNÚTRI CYKLU
+        error_log('[SPA Filter] Filtered choices count: ' . count($filtered_choices));
     }
-    error_log('[SPA Filter] Filtered choices count: ' . count($filtered_choices));
+    
     error_log('[SPA Filter] ========== END ==========');
     return $form;
 }
