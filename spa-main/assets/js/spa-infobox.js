@@ -1258,10 +1258,35 @@ function renderInfobox(data, icons, capacityFree, price) {
                 break;
             }
     
-            // Zobraz/skry element
+            // ⭐ ŠPECIÁLNE: Rodné číslo (input_8) sa zobrazuje LEN pre CHILD
+            const birthNumberField = nextElement.querySelector('input[name="input_8"]');
+            if (birthNumberField) {
+                const birthNumberWrapper = birthNumberField.closest('.gfield');
+                const isChildProgram = birthNumberField.getAttribute('data-is-child') === 'true';
+                
+                if (birthNumberWrapper) {
+                    if (show && isChildProgram) {
+                        // Zobraz LEN pre CHILD
+                        birthNumberWrapper.style.display = 'block';
+                        birthNumberField.disabled = false;
+                        console.log('[SPA toggleSection] Birth number: VISIBLE (CHILD program)');
+                    } else {
+                        // Skry pre ADULT alebo ak sekcia sa skrýva
+                        birthNumberWrapper.style.display = 'none';
+                        birthNumberField.disabled = true;
+                        birthNumberField.value = ''; // Vyčisti hodnotu
+                        console.log('[SPA toggleSection] Birth number: HIDDEN (ADULT program)');
+                    }
+                }
+                
+                nextElement = nextElement.nextElementSibling;
+                continue;
+            }
+    
+            // Zobraz/skry ostatné elementy
             nextElement.style.display = show ? 'block' : 'none';
             
-            // ⭐ ENABLE/DISABLE všetky polia v elemente
+            // ⭐ ENABLE/DISABLE všetky polia v elemente (OKREM input_8)
             if (show) {
                 // Pri zobrazení ENABLE všetky polia
                 const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
@@ -1282,7 +1307,7 @@ function renderInfobox(data, icons, capacityFree, price) {
         }
         
         console.log('[SPA toggleSection]', show ? 'ENABLED' : 'DISABLED', 'fields in section');
-    }    
+    }
 
     /**
      * Vyčistenie všetkých polí v sekciách
