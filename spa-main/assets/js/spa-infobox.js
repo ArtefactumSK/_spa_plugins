@@ -1543,26 +1543,26 @@ function renderInfobox(data, icons, capacityFree, price) {
             html += `<p><strong>Zákonný zástupca:</strong> ${guardianName}, ${guardianEmail}, ${guardianPhone}</p>`;
         }
 
-        // 4. Kontakt na účastníka
+        // 4. Kontakt na účastníka (email a/alebo telefón - nepovinné pre CHILD aj ADULT)
+        let participantEmail = '';
+        
         if (isChild) {
-            // CHILD: Telefón účastníka (voliteľné)
-            if (phone) {
-                html += `<p><strong>Telefónne číslo účastníka:</strong> ${phone}</p>`;
-            }
+            // CHILD: použij input_15
+            const childEmailInput = document.querySelector('input[name="input_15"]');
+            participantEmail = childEmailInput?.value.trim() || '';
         } else {
-            // ADULT: Email + telefón (povinné)
+            // ADULT: použij input_16
             const adultEmailInput = document.querySelector('input[name="input_16"]');
-            const adultEmail = adultEmailInput?.value.trim();
+            participantEmail = adultEmailInput?.value.trim() || '';
+        }
+        
+        // Zobraz len ak je ASPOŇ JEDNO pole vyplnené
+        if (participantEmail || phone) {
+            const contactParts = [];
+            if (participantEmail) contactParts.push(participantEmail);
+            if (phone) contactParts.push(phone);
             
-            if (adultEmail && phone) {
-                html += `<p><strong>Kontakt na účastníka:</strong> ${adultEmail}, ${phone}</p>`;
-            } else if (adultEmail || phone) {
-                // Zobraz čo máme (ak je vyplnené aspoň jedno)
-                const parts = [];
-                if (adultEmail) parts.push(adultEmail);
-                if (phone) parts.push(phone);
-                html += `<p><strong>Kontakt na účastníka:</strong> ${parts.join(', ')}</p>`;
-            }
+            html += `<p><strong>Kontakt na účastníka:</strong> ${contactParts.join(', ')}</p>`;
         }
 
         // 5. Vybraný program
@@ -1656,6 +1656,7 @@ function renderInfobox(data, icons, capacityFree, price) {
             'input_18.3', 'input_18.6', // Meno zástupcu
             'input_12',                 // Email zástupcu
             'input_13',                 // Telefón zástupcu
+            'input_15',                 // Email dieťaťa
             'input_16',                 // Email dospelého účastníka
             'spa_frequency'             // Frekvencia
         ];
