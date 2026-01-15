@@ -1220,20 +1220,23 @@ function renderInfobox(data, icons, capacityFree, price) {
                 break;
             }
     
-            // ⭐ ŠPECIÁLNE: Telefón účastníka (input_19) - zobraz LEN ak show=true
+            // ⭐ ŠPECIÁLNE: Telefón účastníka (input_19) - VŽDY zobraz ak je AKÝKOĽVEK program vybraný
             const phoneField = nextElement.querySelector('input[name="input_19"]');
             if (phoneField) {
                 const phoneWrapper = phoneField.closest('.gfield');
                 if (phoneWrapper) {
-                    if (show) {
-                        // Program vybraný - ZOBRAZ
+                    // Skontroluj GLOBÁLNY stav programu (nie len lokálny show parameter)
+                    const isProgramSelected = !!(wizardData.program_name && wizardData.program_name.trim() !== '');
+                    
+                    if (isProgramSelected) {
+                        // Program vybraný - VŽDY ZOBRAZ
                         phoneWrapper.style.display = '';
                         phoneWrapper.style.visibility = 'visible';
                         phoneWrapper.style.opacity = '1';
                         phoneField.disabled = false;
-                        console.log('[SPA toggleSection] Phone field: VISIBLE (program selected)');
+                        console.log('[SPA toggleSection] Phone field: FORCED VISIBLE (program selected globally)');
                     } else {
-                        // Program nie je vybraný - SKRY
+                        // Žiadny program - SKRY
                         phoneWrapper.style.display = 'none';
                         phoneField.disabled = true;
                         console.log('[SPA toggleSection] Phone field: HIDDEN (no program)');
