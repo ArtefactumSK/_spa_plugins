@@ -195,8 +195,25 @@ function spa_ajax_get_programs() {
         return;
     }
     
-    // Konverzia slug → názov mesta
-    $city_name = ucfirst(str_replace('-', ' ', $city_slug));
+    // ⭐ NÁJDI MESTO V DB PODĽA SLUG (s diakritikou)
+    global $wpdb;
+    $city_name = $wpdb->get_var($wpdb->prepare("
+        SELECT DISTINCT pm.meta_value
+        FROM {$wpdb->postmeta} pm
+        INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+        WHERE p.post_type = 'spa_place'
+        AND p.post_status = 'publish'
+        AND pm.meta_key = 'spa_place_city'
+        AND LOWER(REPLACE(pm.meta_value, 'č', 'c')) = LOWER(REPLACE(%s, 'č', 'c'))
+        LIMIT 1
+    ", $city_slug));
+    
+    if (!$city_name) {
+        wp_send_json_error(['message' => 'Mesto nenájdené.']);
+        return;
+    }
+    
+    error_log('[SPA Programs] City slug: ' . $city_slug . ' → City name: ' . $city_name);
     
     // Načítanie programov pre dané mesto
     $programs = spa_get_programs_for_city_dynamic($city_name);
@@ -217,7 +234,7 @@ add_action('wp_ajax_nopriv_spa_get_programs', 'spa_ajax_get_programs');
  */
 function spa_get_programs_for_city_dynamic($city_name) {
     global $wpdb;
-    
+    error_log('[SPA Programs Dynamic] Looking for city: ' . $city_name);
     // KROK 1: Nájdi spa_place pre dané mesto
     $place_sql = $wpdb->prepare("
         SELECT p.ID
@@ -289,7 +306,7 @@ function spa_get_programs_for_city_dynamic($city_name) {
         $age_b = $b['age_min'] !== null ? $b['age_min'] : 999;
         return $age_a - $age_b;
     });
-    
+    error_log('[SPA Programs Dynamic] Found ' . count($programs) . ' programs for: ' . $city_name);
     return $programs;
 }
 
