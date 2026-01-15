@@ -1531,10 +1531,26 @@ function renderInfobox(data, icons, capacityFree, price) {
         });
     }
 
-    // ⭐ SPUSTI updatePriceSummary pri zmenách
+    // ⭐ SPUSTI updatePriceSummary pri zmenách VŠETKÝCH relevantných polí
     document.addEventListener('change', function(e) {
-        // Trigger pri zmene mena, programu, frekvencie
-        if (e.target.matches('input[name="input_6.3"], input[name="input_6.6"], input[name="spa_frequency"]')) {
+        // Skontroluj či je target input/select a má name atribút
+        if (!e.target || !e.target.name) return;
+        
+        const fieldName = e.target.name;
+        
+        const relevantFields = [
+            'input_6.3', 'input_6.6',   // Meno
+            'input_17',                 // Adresa
+            'input_7',                  // Dátum narodenia
+            'input_19',                 // Telefón účastníka
+            'input_18.3', 'input_18.6', // Meno zástupcu
+            'input_12',                 // Email zástupcu
+            'input_13',                 // Telefón zástupcu
+            'spa_frequency'             // Frekvencia
+        ];
+        
+        if (relevantFields.includes(fieldName)) {
+            console.log('[SPA] Field changed:', fieldName, '→ updating summary');
             setTimeout(updatePriceSummary, 100);
         }
     });
