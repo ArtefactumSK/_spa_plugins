@@ -258,7 +258,7 @@ function spa_get_programs_for_city_dynamic($city_name) {
         }
     }
     
-    // KROK 3: Načítaj spa_group programy
+    // KROK 3: Načítaj spa_group programy PODĽA spa_place_id
     $args = [
         'post_type' => 'spa_group',
         'post_status' => 'publish',
@@ -267,9 +267,20 @@ function spa_get_programs_for_city_dynamic($city_name) {
         'order' => 'ASC',
     ];
     
-    // Ak existujú definované slugy, filtruj podľa nich
-    if (!empty($program_slugs)) {
-        $args['post_name__in'] = $program_slugs;
+    // ⭐ FILTRUJ PODĽA spa_place_id (nie slugs!)
+    if ($place_id) {
+        $args['meta_query'] = [
+            [
+                'key' => 'spa_place_id',
+                'value' => $place_id,
+                'compare' => '='
+            ]
+        ];
+        error_log('[SPA Programs Dynamic] Filtering by place_id: ' . $place_id);
+    } else {
+        // Ak nenašiel place_id, vráť prázdny zoznam
+        error_log('[SPA Programs Dynamic] No place_id found for city: ' . $city_name);
+        return [];
     }
     
     $query = new WP_Query($args);
