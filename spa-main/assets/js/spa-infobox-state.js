@@ -499,8 +499,73 @@ window.applyGetParams = function() {
             }
         }
         
+
+        // ⭐ PROGRAM - aplikuj LEN AK bolo mesto úspešne nastavené
+        if (programParam && stateChanged) {
+            // Počkaj na filtrovanie program options po city change
+            setTimeout(() => {
+                let programAttempts = 0;
+                const maxProgramAttempts = 10;
+                
+                const checkProgramOptions = setInterval(() => {
+                    programAttempts++;
+                    const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+                    const hasProgramOptions = programSelect && programSelect.options.length > 1;
+                    
+                    console.log('[SPA GET] Waiting for program options... (' + programAttempts + '/' + maxProgramAttempts + ')');
+                    
+                    if (!hasProgramOptions && programAttempts < maxProgramAttempts) {
+                        return; // Pokračuj v pollingu
+                    }
+                    
+                    clearInterval(checkProgramOptions);
+                    
+                    if (!hasProgramOptions) {
+                        console.error('[SPA GET] TIMEOUT - program options not ready');
+                        return;
+                    }
+                    
+                    console.log('[SPA GET] Program options ready');
+                    
+                    const matchedOption = Array.from(programSelect.options).find(opt => 
+                        opt.value === programParam
+                    );
+                    
+                    if (matchedOption) {
+                        programSelect.value = matchedOption.value;
+                        window.wizardData.program_name = matchedOption.text;
+                        window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
+                        
+                        // Parsuj vek
+                        const ageMatch = matchedOption.text.match(/(\d+)[–-](\d+)/);
+                        if (ageMatch) {
+                            window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                        } else {
+                            const agePlusMatch = matchedOption.text.match(/(\d+)\+/);
+                            if (agePlusMatch) {
+                                window.wizardData.program_age = agePlusMatch[1] + '+';
+                            }
+                        }
+                        
+                        window.spaFormState.program = true;
+                        window.currentState = 2;
+                        
+                        // ⭐ TRIGGER CHANGE EVENT
+                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        console.log('[SPA GET] Applied program:', matchedOption.text);
+                        
+                        // Načítaj infobox pre state 2
+                        window.loadInfoboxContent(window.currentState);
+                    } else {
+                        console.warn('[SPA GET] ⚠️ Program option not found:', programParam);
+                    }
+                }, 100); // Skúšaj každých 100ms
+            }, 150); // Počkaj na dokončenie filterProgramsByCity
+        }
+
         // PROGRAM
-        if (programParam) {
+        /* if (programParam) {
             const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
             if (programSelect) {
                 const matchedOption = Array.from(programSelect.options).find(opt => 
@@ -534,12 +599,12 @@ window.applyGetParams = function() {
                     console.warn('[SPA GET] Program option not found:', programParam);
                 }
             }
-        }
+        } */
         
         // Ak sa zmenil state, reload infobox
-        if (stateChanged) {
+        /* if (stateChanged) {
             window.loadInfoboxContent(window.currentState);
-        }
+        } */
         
         // FREKVENCIA - aplikuj až PO renderi infoboxu
         if (frequencyParam && window.currentState === 2) {
