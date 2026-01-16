@@ -474,6 +474,13 @@ window.applyGetParams = function() {
                 
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
+                    
+                    // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
+                    if (typeof jQuery !== 'undefined' && jQuery(citySelect).data('chosen')) {
+                        jQuery(citySelect).trigger('chosen:updated');
+                        console.log('[SPA GET] Chosen updated for city select');
+                    }
+                    
                     // 4. Aktuálna hodnota selectu PO nastavení
                     console.log('[SPA GET DEBUG] City select value AFTER:', citySelect.value);
                     console.log('[SPA GET DEBUG] Matched option value:', matchedOption.value);
@@ -533,6 +540,12 @@ window.applyGetParams = function() {
                     
                     if (matchedOption) {
                         programSelect.value = matchedOption.value;
+                        
+                        // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
+                        if (typeof jQuery !== 'undefined' && jQuery(programSelect).data('chosen')) {
+                            jQuery(programSelect).trigger('chosen:updated');
+                            console.log('[SPA GET] Chosen updated for program select');
+                        }
                         
                         // ⭐ BACKUP do hidden fieldu (ochrana pred GF refresh)
                         const programBackup = document.getElementById('spa_program_backup');
