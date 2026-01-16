@@ -368,3 +368,102 @@ window.wizardData = {
             window.hideLoader();
         });
     };
+
+    /**
+ * Aplikuj GET parametre do formulára
+ */
+window.applyGetParams = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cityParam = urlParams.get('spa_city');
+    const programParam = urlParams.get('spa_program');
+    const frequencyParam = urlParams.get('spa_frequency');
+    
+    if (!cityParam && !programParam && !frequencyParam) {
+        console.log('[SPA GET] No GET params found');
+        return;
+    }
+    
+    console.log('[SPA GET] Found params:', { cityParam, programParam, frequencyParam });
+    
+    // Počkaj na GF render selectov
+    setTimeout(() => {
+        let stateChanged = false;
+        
+        // MESTO
+        if (cityParam) {
+            const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
+            if (citySelect) {
+                // Skús nájsť option (case-insensitive porovnanie)
+                const options = Array.from(citySelect.options);
+                const matchedOption = options.find(opt => 
+                    opt.value.toLowerCase() === cityParam.toLowerCase()
+                );
+                
+                if (matchedOption) {
+                    citySelect.value = matchedOption.value;
+                    window.wizardData.city_name = matchedOption.text;
+                    window.spaFormState.city = true;
+                    window.currentState = 1;
+                    stateChanged = true;
+                    console.log('[SPA GET] Applied city:', matchedOption.text);
+                } else {
+                    console.warn('[SPA GET] City option not found:', cityParam);
+                }
+            }
+        }
+        
+        // PROGRAM
+        if (programParam) {
+            const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+            if (programSelect) {
+                const matchedOption = Array.from(programSelect.options).find(opt => 
+                    opt.value === programParam
+                );
+                
+                if (matchedOption) {
+                    programSelect.value = matchedOption.value;
+                    window.wizardData.program_name = matchedOption.text;
+                    window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
+                    
+                    // Parsuj vek
+                    const ageMatch = matchedOption.text.match(/(\d+)[–-](\d+)/);
+                    if (ageMatch) {
+                        window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                    } else {
+                        const agePlusMatch = matchedOption.text.match(/(\d+)\+/);
+                        if (agePlusMatch) {
+                            window.wizardData.program_age = agePlusMatch[1] + '+';
+                        }
+                    }
+                    
+                    window.spaFormState.program = true;
+                    window.currentState = 2;
+                    stateChanged = true;
+                    console.log('[SPA GET] Applied program:', matchedOption.text);
+                } else {
+                    console.warn('[SPA GET] Program option not found:', programParam);
+                }
+            }
+        }
+        
+        // Ak sa zmenil state, reload infobox
+        if (stateChanged) {
+            window.loadInfoboxContent(window.currentState);
+        }
+        
+        // FREKVENCIA - aplikuj až PO renderi infoboxu
+        if (frequencyParam && window.currentState === 2) {
+            setTimeout(() => {
+                const frequencyRadio = document.querySelector(`input[name="spa_frequency"][value="${frequencyParam}"]`);
+                if (frequencyRadio) {
+                    frequencyRadio.checked = true;
+                    window.spaFormState.frequency = true;
+                    window.updateSectionVisibility();
+                    console.log('[SPA GET] Applied frequency:', frequencyParam);
+                } else {
+                    console.warn('[SPA GET] Frequency option not found:', frequencyParam);
+                }
+            }, 500);  // Počkaj na renderFrequencySelector
+        }
+    }, 200);  // Počkaj na GF AJAX
+};

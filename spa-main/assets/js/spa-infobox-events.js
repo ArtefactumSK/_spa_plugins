@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.initialized) return;
     window.initInfobox();
     window.watchFormChanges();
+    window.applyGetParams();  // ⭐ PRIDANÉ
     window.initialized = true;
 });
 
@@ -73,8 +74,9 @@ if (typeof jQuery !== 'undefined') {
         window.initInfobox();
         window.watchFormChanges();
         window.hideAllSectionsOnInit();
+        window.applyGetParams();  // ⭐ PRIDANÉ
     });
- }
+}
 
 
 /**
