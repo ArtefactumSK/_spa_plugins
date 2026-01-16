@@ -533,6 +533,14 @@ window.applyGetParams = function() {
                     
                     if (matchedOption) {
                         programSelect.value = matchedOption.value;
+                        
+                        // ⭐ BACKUP do hidden fieldu (ochrana pred GF refresh)
+                        const programBackup = document.getElementById('spa_program_backup');
+                        if (programBackup) {
+                            programBackup.value = matchedOption.value;
+                            console.log('[SPA GET] Backed up program value:', matchedOption.value);
+                        }
+                        
                         window.wizardData.program_name = matchedOption.text;
                         window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
                         
@@ -554,6 +562,15 @@ window.applyGetParams = function() {
                         programSelect.dispatchEvent(new Event('change', { bubbles: true }));
                         
                         console.log('[SPA GET] Applied program:', matchedOption.text);
+                        
+                        // ⭐ OVER či hodnota zostala po 300ms (po možnom GF refresh)
+                        setTimeout(() => {
+                            const currentValue = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`)?.value;
+                            if (!currentValue || currentValue === '') {
+                                console.warn('[SPA GET] Program value lost, restoring from backup');
+                                window.restoreWizardData();
+                            }
+                        }, 300);
                         
                         // Načítaj infobox pre state 2
                         window.loadInfoboxContent(window.currentState);
