@@ -498,9 +498,17 @@ window.wizardData = {
                     citySelect.value = matchedOption.value;
                     
                     // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
-                    if (typeof jQuery !== 'undefined' && jQuery(citySelect).data('chosen')) {
-                        jQuery(citySelect).trigger('chosen:updated');
-                        console.log('[SPA GET] Chosen updated for city select');
+                    if (typeof jQuery !== 'undefined') {
+                        setTimeout(() => {
+                            if (jQuery(citySelect).data('chosen')) {
+                                jQuery(citySelect).trigger('chosen:updated');
+                                console.log('[SPA GET] Chosen updated for city select');
+                            } else {
+                                // Fallback: Force native select UI update
+                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.value == cityParam);
+                                console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
+                            }
+                        }, 50);
                     }
                     
                     // 4. Aktuálna hodnota selectu PO nastavení
