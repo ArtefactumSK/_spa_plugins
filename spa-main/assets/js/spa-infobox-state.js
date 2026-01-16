@@ -564,43 +564,6 @@ window.applyGetParams = function() {
             }, 150); // Počkaj na dokončenie filterProgramsByCity
         }
 
-        // PROGRAM
-        /* if (programParam) {
-            const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
-            if (programSelect) {
-                const matchedOption = Array.from(programSelect.options).find(opt => 
-                    opt.value === programParam
-                );
-                
-                if (matchedOption) {
-                    programSelect.value = matchedOption.value;
-                    window.wizardData.program_name = matchedOption.text;
-                    window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
-                    
-                    // Parsuj vek
-                    const ageMatch = matchedOption.text.match(/(\d+)[–-](\d+)/);
-                    if (ageMatch) {
-                        window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
-                    } else {
-                        const agePlusMatch = matchedOption.text.match(/(\d+)\+/);
-                        if (agePlusMatch) {
-                            window.wizardData.program_age = agePlusMatch[1] + '+';
-                        }
-                    }
-                    
-                    window.spaFormState.program = true;
-                    window.currentState = 2;
-                    stateChanged = true;
-                    console.log('[SPA GET] Applied program:', matchedOption.text);
-                    
-                    // ⭐ TRIGGER CHANGE EVENT
-                    programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    console.warn('[SPA GET] Program option not found:', programParam);
-                }
-            }
-        } */
-        
         // Ak sa zmenil state, reload infobox
         /* if (stateChanged) {
             window.loadInfoboxContent(window.currentState);
