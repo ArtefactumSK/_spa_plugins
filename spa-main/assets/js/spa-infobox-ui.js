@@ -146,22 +146,24 @@ window.updatePriceSummary = function() {
             placeDisplay = parts.join(', ');
         }
     
-        // Veková kategória (age range programu)
-        let ageCategory = '';
-        if (window.infoboxData?.program) {
-            const ageMin = window.infoboxData.program.age_min;
-            const ageMax = window.infoboxData.program.age_max;
-            
-            if (ageMin && ageMax) {
-                ageCategory = ageMin + '-' + ageMax + ' r.';
-            } else if (ageMin) {
-                ageCategory = ageMin + '+ r.';
-            }
-        }
-    
-        // Rozvrh (placeholder - načíta sa z GF fieldu ak existuje)
-        let schedule = '';
-        // TODO: Ak máš rozvrh v GF, doplň sem načítanie
+       // Veková kategória (age range programu)
+       let ageCategory = '';
+       if (window.infoboxData?.program) {
+           const ageMin = window.infoboxData.program.age_min;
+           const ageMax = window.infoboxData.program.age_max;
+           
+           if (ageMin && ageMax) {
+               ageCategory = ageMin + '-' + ageMax + ' r.';
+           } else if (ageMin) {
+               ageCategory = ageMin + '+ r.';
+           }
+       }
+   
+       // Rozvrh
+       let schedule = '';
+       if (window.infoboxData?.program?.schedule) {
+           schedule = window.infoboxData.program.schedule;
+       }
     
         // Frekvencia / Cena
         const selectedFrequency = document.querySelector('input[name="spa_frequency"]:checked');
