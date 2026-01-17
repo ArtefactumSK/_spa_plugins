@@ -144,9 +144,9 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
         if (programData.schedule) {
             programMainHtml += `
                 <div class="spa-training-schedule">
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; color: var(--theme-palette-color-1);">
+                     <!-- <h4 style="font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; color: var(--theme-palette-color-1);">
                         🕘 Rozvrh tréningového programu
-                    </h4>
+                    </h4> -->
                     <div class="spa-program-schedule-grid">
                         ${programData.schedule}
                     </div>
@@ -181,8 +181,10 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
         
         programIconHtml += '</div>'; // .spa-program-icon
         
-        // Zatiaľ len main, summary a icon sa pridajú neskôr
-        let programHtml = programMainHtml;
+        // ZLOŽENIE: main + icon (icon sa použije neskôr)
+        let programHtml = programMainHtml + programIconHtml;
+        // Ulož ikonu do premennej pre neskoršie použitie
+        window.savedProgramIconHtml = programIconHtml;
         // ⭐ Len pre-označenie radio buttonu podľa veku (BEZ zobrazenia sekcií!)
         setTimeout(() => {
             const isChild = programData.age_min && programData.age_min < 18;
@@ -332,10 +334,12 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
 
         summaryHtml += '</ul>';
         
-        // Vlož summary do programDiv a obal všetko správne
+        // Prebuduj štruktúru s wrapperom
         const programDiv = container.querySelector('.spa-infobox-program');
         if (programDiv && window.currentState === 2) {
             const mainDiv = programDiv.querySelector('.spa-program-main');
+            const iconDiv = programDiv.querySelector('.spa-program-icon');
+            
             if (mainDiv) {
                 // Vytvor left wrapper s main + summary
                 const leftHtml = '<div class="spa-program-left">' + 
@@ -343,8 +347,11 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
                                 '<div class="spa-infobox-summary">' + summaryHtml + '</div>' +
                                 '</div>';
                 
-                // Nastav finálnu štruktúru: left + icon
-                programDiv.innerHTML = leftHtml + programIconHtml;
+                // Použij uloženú ikonu
+                const iconHtml = iconDiv ? iconDiv.outerHTML : (window.savedProgramIconHtml || '');
+                
+                // Nastav finálnu štruktúru
+                programDiv.innerHTML = leftHtml + iconHtml;
             }
         }
     }

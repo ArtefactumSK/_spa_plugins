@@ -385,11 +385,9 @@ function spa_ajax_get_infobox_content() {
                     foreach ($days_short as $day_key => $day_label) {
                         $schedule_html .= '<div class="schedule-time">';
                         if (isset($schedule_map[$day_key])) {
-                            // Každý čas na samostatnom riadku
-                            $times_html = array_map(function($time) {
-                                return '<div>' . esc_html($time) . '</div>';
-                            }, $schedule_map[$day_key]);
-                            $schedule_html .= implode('', $times_html);
+                            // Každý čas na samostatnom riadku - esc_html až na jednotlivé hodnoty
+                            $escaped_times = array_map('esc_html', $schedule_map[$day_key]);
+                            $schedule_html .= implode('<br>', $escaped_times);
                         } else {
                             $schedule_html .= '—';
                         }
