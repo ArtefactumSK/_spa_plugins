@@ -173,6 +173,13 @@
             selectElement.appendChild(option);
         });
         selectElement.disabled = false;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const programId = urlParams.get('spa_program');
+        if (programId && selectElement.querySelector(`option[value="${programId}"]`)) {
+            selectElement.value = programId;
+            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         
         // Nastav listenery pre meno/priezvisko (blur)
         setupNameFieldListeners();
