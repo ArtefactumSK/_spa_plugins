@@ -564,9 +564,9 @@ window.wizardData = {
                     
                     console.log('[SPA GET] Program options ready');
                     
-                    // ⭐ NÁJDI OPTION PODĽA data-program-id (ID-based matching)
+                    // ⭐ NÁJDI OPTION PODĽA value (už je ID po GF úprave)
                     const matchedOption = Array.from(programSelect.options).find(opt => 
-                        opt.getAttribute('data-program-id') == programParam
+                        opt.value == programParam
                     );
                     
                     if (matchedOption) {
