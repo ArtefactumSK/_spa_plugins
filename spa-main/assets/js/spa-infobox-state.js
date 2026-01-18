@@ -540,6 +540,13 @@ window.spa_remove_diacritics = function(str) {
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
                     
+                    // ⭐ BACKUP city hodnotu do hidden field (ochrana pred GF refresh)
+                    const cityBackup = document.getElementById('spa_city_backup');
+                    if (cityBackup) {
+                        cityBackup.value = matchedOption.value;
+                        console.log('[SPA GET] Backed up city value:', matchedOption.value);
+                    }
+                    
                     // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
                     if (typeof jQuery !== 'undefined') {
                         setTimeout(() => {
@@ -548,7 +555,10 @@ window.spa_remove_diacritics = function(str) {
                                 console.log('[SPA GET] Chosen updated for city select');
                             } else {
                                 // Fallback: Force native select UI update
-                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
+                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => {
+                                    const normalizedOptionText = spa_remove_diacritics(opt.text.trim());
+                                    return normalizedOptionText === cityParam;
+                                });
                                 console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
                             }
                         }, 50);
@@ -574,6 +584,38 @@ window.spa_remove_diacritics = function(str) {
 
                     // ⭐ TRIGGER CHANGE EVENT
                     citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // ⭐ AGGRESSIVE POLLING: Sleduj či GF zresetoval select a opakuj nastavenie
+                    let verifyCityAttempts = 0;
+                    const maxVerifyCityAttempts = 10;
+                    
+                    const verifyCityValue = setInterval(() => {
+                        verifyCityAttempts++;
+                        const currentCitySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
+                        const currentValue = currentCitySelect?.value;
+                        
+                        if (currentValue && currentValue === matchedOption.value) {
+                            console.log('[SPA GET] ✅ City value stable:', currentValue);
+                            clearInterval(verifyCityValue);
+                        } else if (verifyCityAttempts >= maxVerifyCityAttempts) {
+                            console.error('[SPA GET] ❌ City value never stabilized');
+                            clearInterval(verifyCityValue);
+                        } else if (currentCitySelect && currentCitySelect.options.length > 1) {
+                            // Options sú ready, ale hodnota chýba - aplikuj znova
+                            const freshOption = Array.from(currentCitySelect.options).find(opt => {
+                                const normalizedOptionText = spa_remove_diacritics(opt.text.trim());
+                                return normalizedOptionText === cityParam;
+                            });
+                            if (freshOption) {
+                                currentCitySelect.value = freshOption.value;
+                                if (typeof jQuery !== 'undefined' && jQuery(currentCitySelect).data('chosen')) {
+                                    jQuery(currentCitySelect).trigger('chosen:updated');
+                                }
+                                console.log('[SPA GET] Re-applied city value (attempt ' + verifyCityAttempts + ')');
+                            }
+                        }
+                    }, 200); // Skúšaj každých 200ms
+                    
                 } else {
                     console.warn('[SPA GET] City option not found:', cityParam);
                 }
