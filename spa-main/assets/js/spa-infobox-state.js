@@ -407,9 +407,10 @@ window.wizardData = {
             return;
         }
         
-        console.log('[SPA GET] Found params:', { cityParam, programParam, frequencyParam });
+        console.log('[SPA GET] ========== GET FLOW START ==========');
+        console.log('[SPA GET] URL params:', { cityParam, programParam, frequencyParam });
         
-        // ⭐ STAVOVÝ GUARD: Sleduje fázy GET aplikácie
+        // ⭐ STAVOVÝ GUARD
         if (!window.spaGFGetState) {
             window.spaGFGetState = {
                 cityApplied: false,
@@ -417,271 +418,222 @@ window.wizardData = {
             };
         }
 
-        // Ak už bola aplikovaná city FÁZA a v URL nie je program, zastav
         if (window.spaGFGetState.cityApplied && !programParam) {
             console.log('[SPA GET] City already applied, no program in URL - skipping');
             return;
         }
 
-        // Ak už boli obe fázy aplikované, zastav
         if (window.spaGFGetState.cityApplied && window.spaGFGetState.programApplied) {
-            console.log('[SPA GET] Both city and program already applied - skipping');
+            console.log('[SPA GET] Both already applied - skipping');
             return;
         }
 
-        // ⭐ FLAG: Zabraň resetu programu pri city change z GET
+        // ⭐ FLAG: Zabraň resetu programu
         window.isApplyingGetParams = true;
-    
-        // ⭐ ODLOŽI POLLING o 500ms (počkaj na GF AJAX load)
-        setTimeout(() => {
-            let attempts = 0;
-            const maxAttempts = 30;
-
-            const checkOptions = setInterval(() => {
-        attempts++;
-        console.log('[SPA GET DEBUG] ========== START DIAGNOSTICS (attempt ' + attempts + '/' + maxAttempts + ') ==========');
-        console.log('[SPA GET DEBUG] URL params:', { cityParam, programParam, frequencyParam });
-        console.log('[SPA GET DEBUG] spaConfig.fields:', spaConfig.fields);
-
-        // 1. Skontroluj či existuje select pre mesto
-        const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-        console.log('[SPA GET DEBUG] City select element:', citySelect);
-        console.log('[SPA GET DEBUG] City select exists:', !!citySelect);
-
-        if (citySelect) {
-            // 2. Jeho name + id + počet option
-            console.log('[SPA GET DEBUG] City select name:', citySelect.name);
-            console.log('[SPA GET DEBUG] City select id:', citySelect.id);
-            console.log('[SPA GET DEBUG] City select options.length:', citySelect.options.length);
-            
-            // 3. Zoznam prvých 10 option.value (alebo všetkých)
-            const optionsList = Array.from(citySelect.options).slice(0, 10).map(opt => ({
-                value: opt.value,
-                text: opt.text,
-                selected: opt.selected
-            }));
-            console.log('[SPA GET DEBUG] City select options (first 10):', optionsList);
-            
-            // 4. Aktuálna hodnota selectu PRED nastavením
-            console.log('[SPA GET DEBUG] City select value BEFORE:', citySelect.value);
-            
-            // ⭐ EXISTUJÚCI KÓD NA NASTAVENIE (ponechaj ho tu)
-            // const options = Array.from(citySelect.options);
-            // const matchedOption = options.find(opt => ...);
-            // if (matchedOption) { citySelect.value = matchedOption.value; ... }
-            
-        } else {
-            console.error('[SPA GET DEBUG] ❌ City select NOT FOUND with selector:', `[name="${spaConfig.fields.spa_city}"]`);
-            
-            // Skús alternatívne selektory
-            const altSelect1 = document.querySelector('[name="input_1"]');
-            const altSelect2 = document.querySelector('#input_1_1');
-            const altSelect3 = document.querySelector('select[id^="input_1"]');
-            
-            console.log('[SPA GET DEBUG] Alternative selectors:');
-            console.log('  [name="input_1"]:', !!altSelect1);
-            console.log('  #input_1_1:', !!altSelect2);
-            console.log('  select[id^="input_1"]:', !!altSelect3);
-        }
-
-        console.log('[SPA GET DEBUG] ========== END DIAGNOSTICS ==========');
         
-        // ⭐ KONTROLA: Ak options neexistujú a ešte je čas, skús znova
-        const citySelect2 = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-        if (!citySelect || citySelect.options.length <= 1) {
-            if (attempts < maxAttempts) {
-                console.log('[SPA GET] Waiting for options... (' + attempts + '/' + maxAttempts + ')');
-                return; // Pokračuj v pollingu
-            } else {
-                console.error('[SPA GET] TIMEOUT - options not ready after ' + attempts + ' attempts');
-                clearInterval(checkOptions);
-                return;
-            }
-        }
-        
-        // ⭐ Options sú ready, zastav polling
-        clearInterval(checkOptions);
-        console.log('[SPA GET] ✅ Options ready, applying params');
-        
-        let stateChanged = false;
-        
-        // MESTO
-        if (cityParam) {
-            const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-            if (citySelect) {
-                // Skús nájsť option (case-insensitive porovnanie)
-                const options = Array.from(citySelect.options);
-                const matchedOption = options.find(opt => 
-                    opt.text.trim().toLowerCase().includes(cityParam.toLowerCase())
-                );
+        // ⭐ Funkcia na aplikáciu CITY
+        const applyCityFromGet = function() {
+            if (!cityParam) return Promise.resolve(false);
+            
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 30;
                 
-                if (matchedOption) {
-                    citySelect.value = matchedOption.value;
+                const checkCityOptions = setInterval(() => {
+                    attempts++;
+                    const citySelect = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
                     
-                    // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
-                    if (typeof jQuery !== 'undefined') {
-                        setTimeout(() => {
-                            if (jQuery(citySelect).data('chosen')) {
-                                jQuery(citySelect).trigger('chosen:updated');
-                                console.log('[SPA GET] Chosen updated for city select');
-                            } else {
-                                // Fallback: Force native select UI update
-                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
-                                console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
-                            }
-                        }, 50);
-                    }
-                    
-                    // 4. Aktuálna hodnota selectu PO nastavení
-                    console.log('[SPA GET DEBUG] City select value AFTER:', citySelect.value);
-                    console.log('[SPA GET DEBUG] Matched option value:', matchedOption.value);
-                    console.log('[SPA GET DEBUG] Matched option text:', matchedOption.text);
-
-                    // 5. Overiť či hodnota zostala aj po 500ms
-                    setTimeout(() => {
-                        const finalValue = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-                        console.log('[SPA GET DEBUG] City select value AFTER 500ms:', finalValue?.value);
-                        console.log('[SPA GET DEBUG] City select still exists:', !!finalValue);
-                    }, 500);
-                    window.wizardData.city_name = matchedOption.text;
-                    window.spaFormState.city = true;
-                    window.currentState = 1;
-                    stateChanged = true;
-                    window.spaGFGetState.cityApplied = true;
-                    console.log('[SPA GET] ✅ City applied:', matchedOption.text);
-
-                    // ⭐ TRIGGER CHANGE EVENT
-                    citySelect.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    console.warn('[SPA GET] City option not found:', cityParam);
-                }
-            }
-        }
-        
-
-        // ⭐ PROGRAM - aplikuj LEN AK:
-        // 1. bolo mesto úspešne nastavené
-        // 2. program ešte nebol aplikovaný
-        if (programParam && stateChanged && !window.spaGFGetState.programApplied) {
-            // Počkaj na filtrovanie program options po city change
-            setTimeout(() => {
-                let programAttempts = 0;
-                const maxProgramAttempts = 10;
-                
-                const checkProgramOptions = setInterval(() => {
-                    programAttempts++;
-                    const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
-                    const hasProgramOptions = programSelect && programSelect.options.length > 1;
-                    
-                    console.log('[SPA GET] Waiting for program options... (' + programAttempts + '/' + maxProgramAttempts + ')');
-                    
-                    if (!hasProgramOptions && programAttempts < maxProgramAttempts) {
-                        return; // Pokračuj v pollingu
-                    }
-                    
-                    clearInterval(checkProgramOptions);
-                    
-                    if (!hasProgramOptions) {
-                        console.error('[SPA GET] TIMEOUT - program options not ready');
+                    if (!citySelect || citySelect.options.length <= 1) {
+                        if (attempts < maxAttempts) {
+                            console.log('[SPA GET] Waiting for city options... (' + attempts + '/' + maxAttempts + ')');
+                            return;
+                        }
+                        clearInterval(checkCityOptions);
+                        console.error('[SPA GET] ❌ City TIMEOUT');
+                        resolve(false);
                         return;
                     }
                     
-                    console.log('[SPA GET] Program options ready');
+                    clearInterval(checkCityOptions);
                     
-                    // ⭐ NÁJDI OPTION PODĽA value (program=889 je ID)
-                    const matchedOption = Array.from(programSelect.options).find(opt => 
-                        opt.value == programParam
+                    const options = Array.from(citySelect.options);
+                    const matchedOption = options.find(opt => 
+                        opt.text.trim().toLowerCase().includes(cityParam.toLowerCase())
                     );
                     
-                    if (matchedOption) {
-                        // ⭐ GUARD: Program sa aplikuje len raz
-                        let programAppliedOnce = false;
+                    if (!matchedOption) {
+                        console.error('[SPA GET] ❌ City option not found:', cityParam);
+                        resolve(false);
+                        return;
+                    }
+                    
+                    // ⭐ NASTAV cez jQuery
+                    if (typeof jQuery !== 'undefined') {
+                        jQuery(citySelect).val(matchedOption.value).trigger('change');
+                        if (jQuery(citySelect).data('chosen')) {
+                            jQuery(citySelect).trigger('chosen:updated');
+                        }
+                    } else {
+                        citySelect.value = matchedOption.value;
+                        citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    
+                    // ⭐ OVER či hodnota je nastavená
+                    setTimeout(() => {
+                        if (citySelect.value === matchedOption.value) {
+                            window.wizardData.city_name = matchedOption.text;
+                            window.spaFormState.city = true;
+                            window.currentState = 1;
+                            window.spaGFGetState.cityApplied = true;
+                            console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
+                            resolve(true);
+                        } else {
+                            console.error('[SPA GET] ❌ City value not stable');
+                            resolve(false);
+                        }
+                    }, 100);
+                }, 200);
+            });
+        };
+        
+        // ⭐ Funkcia na aplikáciu PROGRAM
+        const waitForProgramOption = function(programId) {
+            if (!programId) return Promise.resolve(false);
+            
+            return new Promise((resolve) => {
+                let attempts = 0;
+                const maxAttempts = 80; // 80 * 100ms = 8s
+                
+                const checkProgramOption = setInterval(() => {
+                    attempts++;
+                    const programSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
+                    
+                    if (!programSelect) {
+                        if (attempts < maxAttempts) return;
+                        clearInterval(checkProgramOption);
+                        console.error('[SPA GET] ❌ Program select not found');
+                        resolve(false);
+                        return;
+                    }
+                    
+                    // ⭐ Nájdi konkrétnu option (podľa value ALEBO data-program-id)
+                    const matchedOption = Array.from(programSelect.options).find(opt => 
+                        opt.value == programId || opt.getAttribute('data-program-id') == programId
+                    );
+                    
+                    if (!matchedOption) {
+                        if (attempts < maxAttempts) {
+                            if (attempts % 10 === 0) {
+                                console.log('[SPA GET] Waiting for program option... (' + attempts + '/' + maxAttempts + ')');
+                            }
+                            return;
+                        }
+                        clearInterval(checkProgramOption);
                         
-                        // ⭐ OBSERVER: Sleduj GF rerender a aplikuj hodnotu AŽ POTOM
-                        const observer = new MutationObserver((mutations) => {
-                            if (programAppliedOnce) return;
+                        // ⭐ DEBUG: Vypíš dostupné options
+                        const availableOptions = Array.from(programSelect.options).slice(0, 20).map(opt => ({
+                            value: opt.value,
+                            text: opt.text.substring(0, 50),
+                            dataId: opt.getAttribute('data-program-id')
+                        }));
+                        console.error('[SPA GET] ❌ Program option not found. Available options (first 20):', availableOptions);
+                        console.error('[SPA GET] ❌ Looking for programId:', programId);
+                        resolve(false);
+                        return;
+                    }
+                    
+                    clearInterval(checkProgramOption);
+                    console.log('[SPA GET] ✅ Program option found:', matchedOption.text);
+                    
+                    // ⭐ NASTAV cez jQuery
+                    if (typeof jQuery !== 'undefined') {
+                        jQuery(programSelect).val(matchedOption.value).trigger('change');
+                        if (jQuery(programSelect).data('chosen')) {
+                            jQuery(programSelect).trigger('chosen:updated');
+                        }
+                    } else {
+                        programSelect.value = matchedOption.value;
+                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    
+                    // ⭐ OVER či hodnota je nastavená
+                    setTimeout(() => {
+                        if (programSelect.value === matchedOption.value) {
+                            window.wizardData.program_name = matchedOption.text;
+                            window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
                             
-                            for (const mutation of mutations) {
-                                if (mutation.type === 'childList' && mutation.target === programSelect) {
-                                    console.log('[SPA GET] Program <select> re-rendered, applying value');
-                                    
-                                    const freshOption = Array.from(programSelect.options).find(opt => opt.value == programParam);
-                                    if (freshOption) {
-                                        programAppliedOnce = true;
-                                        observer.disconnect();
-                                        
-                                        programSelect.value = freshOption.value;
-                                        
-                                        if (typeof jQuery !== 'undefined' && jQuery(programSelect).data('chosen')) {
-                                            jQuery(programSelect).trigger('chosen:updated');
-                                        }
-                                        
-                                        window.wizardData.program_name = freshOption.text;
-                                        window.wizardData.program_id = freshOption.getAttribute('data-program-id') || freshOption.value;
-                                        
-                                        // Parsuj vek
-                                        const ageMatch = freshOption.text.match(/(\d+)[–-](\d+)/);
-                                        if (ageMatch) {
-                                            window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
-                                        } else {
-                                            const agePlusMatch = freshOption.text.match(/(\d+)\+/);
-                                            if (agePlusMatch) {
-                                                window.wizardData.program_age = agePlusMatch[1] + '+';
-                                            }
-                                        }
-                                        
-                                        window.spaFormState.program = true;
-                                        window.currentState = 2;
-                                        window.spaGFGetState.programApplied = true;
-                                        
-                                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                                        
-                                        console.log('[SPA GET] ✅ Program value set AFTER rerender:', freshOption.value);
-                                        
-                                        // Načítaj infobox pre state 2
-                                        window.loadInfoboxContent(window.currentState);
-                                    }
+                            // Parsuj vek
+                            const ageMatch = matchedOption.text.match(/(\d+)[–-](\d+)/);
+                            if (ageMatch) {
+                                window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                            } else {
+                                const agePlusMatch = matchedOption.text.match(/(\d+)\+/);
+                                if (agePlusMatch) {
+                                    window.wizardData.program_age = agePlusMatch[1] + '+';
                                 }
                             }
-                        });
-                        
-                        observer.observe(programSelect, {
-                            childList: true,
-                            subtree: false
-                        });
-                    } else {
-                        console.warn('[SPA GET] ⚠️ Program option not found:', programParam);
-                    }
-                }, 100); // Skúšaj každých 100ms
-            }, 150); // Počkaj na dokončenie filterProgramsByCity
-        }
-
-        // Ak sa zmenil state, reload infobox
-        /* if (stateChanged) {
-            window.loadInfoboxContent(window.currentState);
-        } */
+                            
+                            window.spaFormState.program = true;
+                            window.currentState = 2;
+                            window.spaGFGetState.programApplied = true;
+                            
+                            console.log('[SPA GET] ✅ Program applied OK:', matchedOption.text);
+                            
+                            // Načítaj infobox
+                            window.loadInfoboxContent(window.currentState);
+                            
+                            resolve(true);
+                        } else {
+                            console.error('[SPA GET] ❌ Program value not stable');
+                            resolve(false);
+                        }
+                    }, 100);
+                }, 100);
+            });
+        };
         
-        // FREKVENCIA - aplikuj až PO renderi infoboxu
-        if (frequencyParam && window.currentState === 2) {
-            setTimeout(() => {
-                const frequencyRadio = document.querySelector(`input[name="spa_frequency"][value="${frequencyParam}"]`);
-                if (frequencyRadio) {
-                    frequencyRadio.checked = true;
-                    window.spaFormState.frequency = true;
-                    window.updateSectionVisibility();
-                    console.log('[SPA GET] Applied frequency:', frequencyParam);
-                } else {
-                    console.warn('[SPA GET] Frequency option not found:', frequencyParam);
+        // ⭐ SEKVENČNÉ VYKONANIE
+        applyCityFromGet()
+            .then((citySuccess) => {
+                if (!citySuccess) {
+                    console.error('[SPA GET] City failed, aborting');
+                    window.isApplyingGetParams = false;
+                    return;
                 }
-            }, 500);  // Počkaj na renderFrequencySelector
-        }
-        
-        // ⭐ ZRUŠ FLAG po dokončení všetkých GET operácií
-        setTimeout(() => {
-            window.isApplyingGetParams = false;
-            console.log('[SPA GET] Flag cleared - normal change handling restored');
-        }, 1500); // Po všetkých setTimeout-och v GET flow
-        
-    }, 200);  // Polling každých 200ms
-}, 500);  // ⭐ ODLOŽENÝ ŠTART o 500ms
-};
+                
+                // ⭐ Počkaj na GF rerender programu (po city change)
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        console.log('[SPA GET] Waiting for GF to rerender program select...');
+                        resolve();
+                    }, 300);
+                });
+            })
+            .then(() => {
+                return waitForProgramOption(programParam);
+            })
+            .then((programSuccess) => {
+                if (!programSuccess && programParam) {
+                    console.error('[SPA GET] ❌ Program failed');
+                }
+                
+                // ⭐ FREKVENCIA
+                if (frequencyParam && window.currentState === 2) {
+                    setTimeout(() => {
+                        const frequencyRadio = document.querySelector(`input[name="spa_frequency"][value="${frequencyParam}"]`);
+                        if (frequencyRadio) {
+                            frequencyRadio.checked = true;
+                            window.spaFormState.frequency = true;
+                            window.updateSectionVisibility();
+                            console.log('[SPA GET] ✅ Frequency applied:', frequencyParam);
+                        }
+                    }, 500);
+                }
+                
+                // ⭐ VYPNI FLAG
+                setTimeout(() => {
+                    window.isApplyingGetParams = false;
+                    console.log('[SPA GET] ========== GET FLOW END ==========');
+                }, 1000);
+            });
+    };
