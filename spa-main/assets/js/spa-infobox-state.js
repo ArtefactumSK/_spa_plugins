@@ -518,40 +518,27 @@ window.wizardData = {
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
 
-                    // ⭐ REFRESH Chosen UI pre CITY (GF uses jQuery Chosen)
-                    if (typeof jQuery !== 'undefined') {    
-                        setTimeout(() => {
-                            if (jQuery(citySelect).data('chosen')) {
-                                jQuery(citySelect).trigger('chosen:updated');
-                                console.log('[SPA GET] Chosen updated for city select');
-                            } else {
-                                // Fallback: Force native select UI update
-                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
-                                console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
-                            }
-                        }, 50);
-                    }
+                    citySelect.value = matchedOption.value;
 
-                    // 4. Aktuálna hodnota selectu PO nastavení
-                    console.log('[SPA GET DEBUG] City select value AFTER:', citySelect.value);
-                    console.log('[SPA GET DEBUG] Matched option value:', matchedOption.value);
-                    console.log('[SPA GET DEBUG] Matched option text:', matchedOption.text);
-
-                    // 5. Overiť či hodnota zostala aj po 500ms
-                    setTimeout(() => {
-                        const finalValue = document.querySelector(`[name="${spaConfig.fields.spa_city}"]`);
-                        console.log('[SPA GET DEBUG] City select value AFTER 500ms:', finalValue?.value);
-                        console.log('[SPA GET DEBUG] City select still exists:', !!finalValue);
-                    }, 500);
                     window.wizardData.city_name = matchedOption.text;
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     stateChanged = true;
                     window.spaGFGetState.cityApplied = true;
-                    console.log('[SPA GET] ✅ City applied:', matchedOption.text);
 
-                    // ⭐ TRIGGER CHANGE EVENT
-                    citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    // ⭐ TRIGGER cez jQuery - GF reaguje LEN na jQuery eventy
+                    if (typeof jQuery !== 'undefined') {
+                        jQuery(citySelect).trigger('change').trigger('input');
+                        
+                        // Refresh Chosen UI
+                        if (jQuery(citySelect).data('chosen')) {
+                            jQuery(citySelect).trigger('chosen:updated');
+                        }
+                        
+                        console.log('[SPA GET] ✅ City applied with jQuery triggers:', matchedOption.text);
+                    } else {
+                        console.error('[SPA GET] jQuery not available - GF will NOT populate program options');
+                    }
                 } else {
                     console.warn('[SPA GET] City option not found:', cityParam);
                 }
