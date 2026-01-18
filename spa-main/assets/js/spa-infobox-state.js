@@ -465,7 +465,7 @@ window.wizardData = {
                     
                     console.log('[SPA GET] City option found:', matchedOption.text);
                     
-                    // ⭐ NASTAV city hodnotu
+                   // ⭐ NASTAV city hodnotu + trigger change (spustí GF conditional logic)
                     if (typeof jQuery !== 'undefined') {
                         jQuery(citySelect).val(matchedOption.value).trigger('change');
                         
@@ -477,23 +477,14 @@ window.wizardData = {
                         citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
-                    // ⭐ POČKAJ 200ms aby sa DOM stabilizoval, POTOM zavolaj filter
-                    setTimeout(() => {
-                        console.log('[SPA GET] Calling filterProgramsByCity explicitly');
-                        window.filterProgramsByCity(matchedOption.text);
-                    }, 200);
-                    
                     // ⭐ Ulož city_name ihneď
                     window.wizardData.city_name = matchedOption.text;
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     window.spaGFGetState.cityApplied = true;
                     
-                    // ⭐ Počkaj na dokončenie filtrovania
-                    setTimeout(() => {
-                        console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
-                        resolve(true);
-                    }, 400);
+                    console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
+                    resolve(true);
                 }, 200);
             });
         };
