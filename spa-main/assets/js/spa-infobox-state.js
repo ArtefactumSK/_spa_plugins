@@ -416,7 +416,12 @@ window.wizardData = {
 
         // ⭐ FLAG: Zabraň resetu programu
         window.isApplyingGetParams = true;
-        
+        // ⭐ VYČISTI URL od GET parametrov (GF conditional logic to môže potrebovať)
+        if (window.history && window.history.replaceState) {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
+            console.log('[SPA GET] URL cleaned for GF conditional logic');
+        }
         // ⭐ Funkcia na aplikáciu CITY
         const applyCityFromGet = function() {
             if (!cityParam) return Promise.resolve(false);
