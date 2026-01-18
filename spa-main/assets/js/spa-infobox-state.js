@@ -398,8 +398,8 @@ window.wizardData = {
  */
     window.applyGetParams = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const cityParam = urlParams.get('spa_city');
-        const programParam = urlParams.get('spa_program');
+        const cityParam = urlParams.get('city');
+        const programParam = urlParams.get('program');
         const frequencyParam = urlParams.get('spa_frequency');
         
         if (!cityParam && !programParam && !frequencyParam) {
@@ -491,7 +491,7 @@ window.wizardData = {
                 // Skús nájsť option (case-insensitive porovnanie)
                 const options = Array.from(citySelect.options);
                 const matchedOption = options.find(opt => 
-                    opt.value == cityParam  // ⭐ ID matching (loose equality)
+                    opt.text.trim().toLowerCase() === cityParam.toLowerCase()
                 );
                 
                 if (matchedOption) {
@@ -566,7 +566,7 @@ window.wizardData = {
                     
                     // ⭐ NÁJDI OPTION PODĽA value (už je ID po GF úprave)
                     const matchedOption = Array.from(programSelect.options).find(opt => 
-                        opt.value == programParam
+                        opt.text.trim().toLowerCase().includes(programParam.toLowerCase())
                     );
                     
                     if (matchedOption) {
