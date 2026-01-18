@@ -479,7 +479,50 @@ window.wizardData = {
                         citySelect.value = matchedOption.value;
                         citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
+                    console.log('[SPA GET City DEBUG] Matched option:', matchedOption.text, 'value:', matchedOption.value);
+                    console.log('[SPA GET City DEBUG] Setting citySelect.value to:', matchedOption.value);
                     
+                    // ⭐ NASTAV hodnotu
+                    citySelect.value = matchedOption.value;
+                    
+                    console.log('[SPA GET City DEBUG] citySelect.value after set:', citySelect.value);
+                    console.log('[SPA GET City DEBUG] jQuery available:', typeof jQuery !== 'undefined');
+                    
+                    // ⭐ TRIGGER change cez jQuery (GF to vyžaduje!)
+                    if (typeof jQuery !== 'undefined') {
+                        console.log('[SPA GET City DEBUG] Calling jQuery().trigger("change")');
+                        jQuery(citySelect).val(matchedOption.value).trigger('change');
+                        
+                        // Ak je Chosen, aktualizuj UI
+                        if (jQuery(citySelect).data('chosen')) {
+                            setTimeout(() => {
+                                jQuery(citySelect).trigger('chosen:updated');
+                                console.log('[SPA GET City DEBUG] Chosen updated');
+                            }, 50);
+                        }
+                    } else {
+                        // Fallback: native event
+                        citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    
+                    // ⭐ OVER či hodnota je nastavená
+                    setTimeout(() => {
+                        console.log('[SPA GET City DEBUG] After 100ms, citySelect.value:', citySelect.value);
+                        console.log('[SPA GET City DEBUG] Expected value:', matchedOption.value);
+                        console.log('[SPA GET City DEBUG] Match:', citySelect.value === matchedOption.value);
+                        
+                        if (citySelect.value === matchedOption.value) {
+                            window.wizardData.city_name = matchedOption.text;
+                            window.spaFormState.city = true;
+                            window.currentState = 1;
+                            window.spaGFGetState.cityApplied = true;
+                            console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
+                            resolve(true);
+                        } else {
+                            console.error('[SPA GET] ❌ City value not stable. Current:', citySelect.value, 'Expected:', matchedOption.value);
+                            resolve(false);
+                        }
+                    }, 100);
                     // ⭐ OVER či hodnota je nastavená
                     setTimeout(() => {
                         if (citySelect.value === matchedOption.value) {
