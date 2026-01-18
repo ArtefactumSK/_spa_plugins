@@ -517,19 +517,21 @@ window.wizardData = {
                 
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
-                    
-                    // ⭐ TRIGGER cez jQuery (GF používa jQuery Chosen)
-                    if (typeof jQuery !== 'undefined') {
-                        jQuery(programSelect).trigger('change').trigger('input');
-                        
-                        // Refresh Chosen UI
-                        if (jQuery(programSelect).data('chosen')) {
-                            jQuery(programSelect).trigger('chosen:updated');
-                        }
-                        
-                        console.log('[SPA GET] jQuery triggers fired for program select');
+
+                    // ⭐ REFRESH Chosen UI pre CITY (GF uses jQuery Chosen)
+                    if (typeof jQuery !== 'undefined') {    
+                        setTimeout(() => {
+                            if (jQuery(citySelect).data('chosen')) {
+                                jQuery(citySelect).trigger('chosen:updated');
+                                console.log('[SPA GET] Chosen updated for city select');
+                            } else {
+                                // Fallback: Force native select UI update
+                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
+                                console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
+                            }
+                        }, 50);
                     }
-                    
+
                     // 4. Aktuálna hodnota selectu PO nastavení
                     console.log('[SPA GET DEBUG] City select value AFTER:', citySelect.value);
                     console.log('[SPA GET DEBUG] Matched option value:', matchedOption.value);
@@ -593,11 +595,17 @@ window.wizardData = {
                     
                     if (matchedOption) {
                         programSelect.value = matchedOption.value;
-                        
-                        // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
-                        if (typeof jQuery !== 'undefined' && jQuery(programSelect).data('chosen')) {
-                            jQuery(programSelect).trigger('chosen:updated');
-                            console.log('[SPA GET] Chosen updated for program select');
+
+                        // ⭐ TRIGGER cez jQuery (GF používa jQuery Chosen)
+                        if (typeof jQuery !== 'undefined') {
+                            jQuery(programSelect).trigger('change').trigger('input');
+                            
+                            // Refresh Chosen UI
+                            if (jQuery(programSelect).data('chosen')) {
+                                jQuery(programSelect).trigger('chosen:updated');
+                            }
+                            
+                            console.log('[SPA GET] jQuery triggers fired for program select');
                         }
                         
                         // ⭐ BACKUP do hidden fieldu (ochrana pred GF refresh)
