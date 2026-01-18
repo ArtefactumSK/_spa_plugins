@@ -394,13 +394,33 @@ window.wizardData = {
     };
 
     /**
+ * Helper: Odstránenie diakritiky (client-side normalizácia)
+ * Zhodné s WordPress sanitize_title() behavior
+ */
+window.spa_remove_diacritics = function(str) {
+    const diacriticsMap = {
+        'á':'a','ä':'a','č':'c','ď':'d','é':'e','ě':'e','í':'i','ľ':'l','ĺ':'l',
+        'ň':'n','ó':'o','ô':'o','ŕ':'r','š':'s','ť':'t','ú':'u','ů':'u','ý':'y','ž':'z',
+        'Á':'a','Ä':'a','Č':'c','Ď':'d','É':'e','Ě':'e','Í':'i','Ľ':'l','Ĺ':'l',
+        'Ň':'n','Ó':'o','Ô':'o','Ŕ':'r','Š':'s','Ť':'t','Ú':'u','Ů':'u','Ý':'y','Ž':'z'
+    };
+    
+    return str.toLowerCase().split('').map(char => diacriticsMap[char] || char).join('');
+};
+    /**
  * Aplikuj GET parametre do formulára
  */
     window.applyGetParams = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const cityParam = urlParams.get('city');
+        let cityParam = urlParams.get('city');
         const programParam = urlParams.get('program');
         const frequencyParam = urlParams.get('spa_frequency');
+        
+        // ⭐ Normalizuj cityParam (odstráň diakritiku)
+        if (cityParam) {
+            cityParam = spa_remove_diacritics(cityParam);
+            console.log('[SPA GET] Normalized city param:', cityParam);
+        }
         
         if (!cityParam && !programParam && !frequencyParam) {
             console.log('[SPA GET] No GET params found');
@@ -465,10 +485,6 @@ window.wizardData = {
             // 4. Aktuálna hodnota selectu PRED nastavením
             console.log('[SPA GET DEBUG] City select value BEFORE:', citySelect.value);
             
-            // ⭐ EXISTUJÚCI KÓD NA NASTAVENIE (ponechaj ho tu)
-            // const options = Array.from(citySelect.options);
-            // const matchedOption = options.find(opt => ...);
-            // if (matchedOption) { citySelect.value = matchedOption.value; ... }
             
         } else {
             console.error('[SPA GET DEBUG] ❌ City select NOT FOUND with selector:', `[name="${spaConfig.fields.spa_city}"]`);
@@ -511,9 +527,11 @@ window.wizardData = {
             if (citySelect) {
                 // Skús nájsť option (case-insensitive porovnanie)
                 const options = Array.from(citySelect.options);
-                const matchedOption = options.find(opt => 
-                    opt.text.trim().toLowerCase().includes(cityParam.toLowerCase())
-                );
+                const matchedOption = options.find(opt => {
+                    const optionText = spa_remove_diacritics(opt.text.trim());
+                    const searchText = cityParam; // už je normalized
+                    return optionText.includes(searchText);
+                });
                 
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
