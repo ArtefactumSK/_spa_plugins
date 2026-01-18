@@ -594,24 +594,52 @@ window.wizardData = {
                     );
                     
                     if (matchedOption) {
+                        // ⭐ GUARD: Program sa aplikuje len raz
+                        let programAppliedOnce = false;
+                        
                         // ⭐ OBSERVER: Sleduj GF rerender a aplikuj hodnotu AŽ POTOM
                         const observer = new MutationObserver((mutations) => {
+                            if (programAppliedOnce) return;
+                            
                             for (const mutation of mutations) {
                                 if (mutation.type === 'childList' && mutation.target === programSelect) {
                                     console.log('[SPA GET] Program <select> re-rendered, applying value');
                                     
                                     const freshOption = Array.from(programSelect.options).find(opt => opt.value == programParam);
                                     if (freshOption) {
+                                        programAppliedOnce = true;
+                                        observer.disconnect();
+                                        
                                         programSelect.value = freshOption.value;
                                         
                                         if (typeof jQuery !== 'undefined' && jQuery(programSelect).data('chosen')) {
                                             jQuery(programSelect).trigger('chosen:updated');
                                         }
                                         
+                                        window.wizardData.program_name = freshOption.text;
+                                        window.wizardData.program_id = freshOption.getAttribute('data-program-id') || freshOption.value;
+                                        
+                                        // Parsuj vek
+                                        const ageMatch = freshOption.text.match(/(\d+)[–-](\d+)/);
+                                        if (ageMatch) {
+                                            window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
+                                        } else {
+                                            const agePlusMatch = freshOption.text.match(/(\d+)\+/);
+                                            if (agePlusMatch) {
+                                                window.wizardData.program_age = agePlusMatch[1] + '+';
+                                            }
+                                        }
+                                        
+                                        window.spaFormState.program = true;
+                                        window.currentState = 2;
+                                        window.spaGFGetState.programApplied = true;
+                                        
                                         programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                        
                                         console.log('[SPA GET] ✅ Program value set AFTER rerender:', freshOption.value);
                                         
-                                        observer.disconnect();
+                                        // Načítaj infobox pre state 2
+                                        window.loadInfoboxContent(window.currentState);
                                     }
                                 }
                             }
@@ -621,78 +649,6 @@ window.wizardData = {
                             childList: true,
                             subtree: false
                         });
-                        
-                        // Fallback ak sa observer nespustí do 3s
-                        setTimeout(() => {
-                            observer.disconnect();
-                            if (!programSelect.value || programSelect.value === '') {
-                                const freshOption = Array.from(programSelect.options).find(opt => opt.value == programParam);
-                                if (freshOption) {
-                                    programSelect.value = freshOption.value;
-                                    programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                                    console.log('[SPA GET] ✅ Program value set via FALLBACK');
-                                }
-                            }
-                        }, 3000);
-                        
-                        // ⭐ BACKUP do hidden fieldu (ochrana pred GF refresh)
-                        const programBackup = document.getElementById('spa_program_backup');
-                        if (programBackup) {
-                            programBackup.value = programParam;
-                            console.log('[SPA GET] Backed up program value:', programParam);
-                        }
-                        
-                        window.wizardData.program_name = matchedOption.text;
-                        window.wizardData.program_id = matchedOption.getAttribute('data-program-id') || matchedOption.value;
-                        
-                        // Parsuj vek
-                        const ageMatch = matchedOption.text.match(/(\d+)[–-](\d+)/);
-                        if (ageMatch) {
-                            window.wizardData.program_age = ageMatch[1] + '–' + ageMatch[2];
-                        } else {
-                            const agePlusMatch = matchedOption.text.match(/(\d+)\+/);
-                            if (agePlusMatch) {
-                                window.wizardData.program_age = agePlusMatch[1] + '+';
-                            }
-                        }
-                        
-                        window.spaFormState.program = true;
-                        window.currentState = 2;
-                        window.spaGFGetState.programApplied = true;
-
-                        // ⭐ TRIGGER CHANGE EVENT
-                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
-                        console.log('[SPA GET] ✅ Program applied:', matchedOption.text);
-                        
-                        // ⭐ AGGRESSIVE POLLING: Sleduj či GF zresetoval select a opakuj nastavenie
-                        let verifyAttempts = 0;
-                        const maxVerifyAttempts = 20;
-                        
-                        const verifyProgramValue = setInterval(() => {
-                            verifyAttempts++;
-                            const currentSelect = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
-                            const currentValue = currentSelect?.value;
-                            
-                            if (currentValue && currentValue == programParam) {
-                                console.log('[SPA GET] ✅ Program value stable:', currentValue);
-                                clearInterval(verifyProgramValue);
-                            } else if (verifyAttempts >= maxVerifyAttempts) {
-                                console.error('[SPA GET] ❌ Program value never stabilized');
-                                clearInterval(verifyProgramValue);
-                            } else if (currentSelect && currentSelect.options.length > 1) {
-                                // Options sú ready, ale hodnota chýba - aplikuj znova
-                                const freshOption = Array.from(currentSelect.options).find(opt => opt.value == programParam);
-                                if (freshOption) {
-                                    currentSelect.value = freshOption.value;
-                                    currentSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                                    console.log('[SPA GET] Re-applied program value (attempt ' + verifyAttempts + ')');
-                                }
-                            }
-                        }, 100);
-                        
-                        // Načítaj infobox pre state 2
-                        window.loadInfoboxContent(window.currentState);
                     } else {
                         console.warn('[SPA GET] ⚠️ Program option not found:', programParam);
                     }
