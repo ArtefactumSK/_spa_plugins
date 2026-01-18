@@ -518,18 +518,16 @@ window.wizardData = {
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
                     
-                    // ⭐ REFRESH Chosen UI (GF uses jQuery Chosen)
+                    // ⭐ TRIGGER cez jQuery (GF používa jQuery Chosen)
                     if (typeof jQuery !== 'undefined') {
-                        setTimeout(() => {
-                            if (jQuery(citySelect).data('chosen')) {
-                                jQuery(citySelect).trigger('chosen:updated');
-                                console.log('[SPA GET] Chosen updated for city select');
-                            } else {
-                                // Fallback: Force native select UI update
-                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
-                                console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
-                            }
-                        }, 50);
+                        jQuery(programSelect).trigger('change').trigger('input');
+                        
+                        // Refresh Chosen UI
+                        if (jQuery(programSelect).data('chosen')) {
+                            jQuery(programSelect).trigger('chosen:updated');
+                        }
+                        
+                        console.log('[SPA GET] jQuery triggers fired for program select');
                     }
                     
                     // 4. Aktuálna hodnota selectu PO nastavení
@@ -628,8 +626,6 @@ window.wizardData = {
                         window.spaGFGetState.programApplied = true;
 
                         // ⭐ TRIGGER CHANGE EVENT
-                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
                         console.log('[SPA GET] ✅ Program applied:', matchedOption.text);
                         
                         // ⭐ OVER či hodnota zostala po 300ms (po možnom GF refresh)
