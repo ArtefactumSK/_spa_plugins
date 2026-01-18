@@ -469,47 +469,30 @@ window.wizardData = {
                         return;
                     }
                     
-                    // ⭐ NASTAV cez jQuery
-                    if (typeof jQuery !== 'undefined') {
-                        jQuery(citySelect).val(matchedOption.value).trigger('change');
-                        if (jQuery(citySelect).data('chosen')) {
-                            jQuery(citySelect).trigger('chosen:updated');
-                        }
-                    } else {
-                        citySelect.value = matchedOption.value;
-                        citySelect.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
                     console.log('[SPA GET City DEBUG] Matched option:', matchedOption.text, 'value:', matchedOption.value);
-                    console.log('[SPA GET City DEBUG] Setting citySelect.value to:', matchedOption.value);
                     
-                    // ⭐ NASTAV hodnotu
+                    // ⭐ NASTAV hodnotu PRIAMO
                     citySelect.value = matchedOption.value;
+                    console.log('[SPA GET City DEBUG] citySelect.value set to:', citySelect.value);
                     
-                    console.log('[SPA GET City DEBUG] citySelect.value after set:', citySelect.value);
-                    console.log('[SPA GET City DEBUG] jQuery available:', typeof jQuery !== 'undefined');
-                    
-                    // ⭐ TRIGGER change cez jQuery (GF to vyžaduje!)
+                    // ⭐ TRIGGER change cez jQuery
                     if (typeof jQuery !== 'undefined') {
-                        console.log('[SPA GET City DEBUG] Calling jQuery().trigger("change")');
+                        console.log('[SPA GET City DEBUG] Triggering jQuery change');
                         jQuery(citySelect).val(matchedOption.value).trigger('change');
                         
-                        // Ak je Chosen, aktualizuj UI
                         if (jQuery(citySelect).data('chosen')) {
                             setTimeout(() => {
                                 jQuery(citySelect).trigger('chosen:updated');
-                                console.log('[SPA GET City DEBUG] Chosen updated');
+                                console.log('[SPA GET City DEBUG] Chosen UI updated');
                             }, 50);
                         }
                     } else {
-                        // Fallback: native event
                         citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
-                    // ⭐ OVER či hodnota je nastavená
+                    // ⭐ OVER hodnotu po 100ms
                     setTimeout(() => {
-                        console.log('[SPA GET City DEBUG] After 100ms, citySelect.value:', citySelect.value);
-                        console.log('[SPA GET City DEBUG] Expected value:', matchedOption.value);
-                        console.log('[SPA GET City DEBUG] Match:', citySelect.value === matchedOption.value);
+                        console.log('[SPA GET City DEBUG] Verifying after 100ms, value:', citySelect.value);
                         
                         if (citySelect.value === matchedOption.value) {
                             window.wizardData.city_name = matchedOption.text;
@@ -610,11 +593,17 @@ window.wizardData = {
                     console.log('[SPA GET] ✅ Program option found:', matchedOption.text);
                     
                     // ⭐ NASTAV hodnotu
-                    citySelect.value = matchedOption.value;
+                    programSelect.value = matchedOption.value;
                     
-                    // ⭐ TRIGGER change cez jQuery (GF to vyžaduje!)
+                    // ⭐ TRIGGER change cez jQuery
                     if (typeof jQuery !== 'undefined') {
-                        jQuery(citySelect).val(matchedOption.value).trigger('change');
+                        jQuery(programSelect).val(matchedOption.value).trigger('change');
+                        
+                        if (jQuery(programSelect).data('chosen')) {
+                            setTimeout(() => {
+                                jQuery(programSelect).trigger('chosen:updated');
+                            }, 50);
+                        }
                         
                         // Ak je Chosen, aktualizuj UI
                         if (jQuery(citySelect).data('chosen')) {
