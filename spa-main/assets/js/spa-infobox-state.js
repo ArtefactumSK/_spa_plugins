@@ -477,9 +477,11 @@ window.wizardData = {
                         citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
-                    // ⭐ EXPLICITNE zavolaj filterProgramsByCity (listener to už neurobí!)
-                    console.log('[SPA GET] Calling filterProgramsByCity explicitly');
-                    window.filterProgramsByCity(matchedOption.text);
+                    // ⭐ POČKAJ 200ms aby sa DOM stabilizoval, POTOM zavolaj filter
+                    setTimeout(() => {
+                        console.log('[SPA GET] Calling filterProgramsByCity explicitly');
+                        window.filterProgramsByCity(matchedOption.text);
+                    }, 200);
                     
                     // ⭐ Ulož city_name ihneď
                     window.wizardData.city_name = matchedOption.text;
@@ -487,8 +489,11 @@ window.wizardData = {
                     window.currentState = 1;
                     window.spaGFGetState.cityApplied = true;
                     
-                    console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
-                    resolve(true);
+                    // ⭐ Počkaj na dokončenie filtrovania
+                    setTimeout(() => {
+                        console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
+                        resolve(true);
+                    }, 400);
                 }, 200);
             });
         };
