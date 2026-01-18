@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.initialized) return;
     window.initInfobox();
     window.watchFormChanges();
-    window.applyGetParams();  // ⭐ PRIDANÉ
+    // ⭐ NEAPLIKUJ GET params tu - GF options ešte neexistujú
     window.initialized = true;
 });
 
