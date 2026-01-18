@@ -491,7 +491,7 @@ window.wizardData = {
                 // Skús nájsť option (case-insensitive porovnanie)
                 const options = Array.from(citySelect.options);
                 const matchedOption = options.find(opt => 
-                    opt.text.trim().toLowerCase() === cityParam.toLowerCase()
+                    opt.text.trim().toLowerCase().includes(cityParam.toLowerCase())
                 );
                 
                 if (matchedOption) {
@@ -505,7 +505,7 @@ window.wizardData = {
                                 console.log('[SPA GET] Chosen updated for city select');
                             } else {
                                 // Fallback: Force native select UI update
-                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.value == cityParam);
+                                citySelect.selectedIndex = Array.from(citySelect.options).findIndex(opt => opt.text.trim().toLowerCase() === cityParam.toLowerCase());
                                 console.log('[SPA GET] Chosen not found, using selectedIndex fallback');
                             }
                         }, 50);
