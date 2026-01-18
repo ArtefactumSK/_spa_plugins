@@ -485,6 +485,10 @@ window.spa_remove_diacritics = function(str) {
             // 4. Aktuálna hodnota selectu PRED nastavením
             console.log('[SPA GET DEBUG] City select value BEFORE:', citySelect.value);
             
+            // ⭐ EXISTUJÚCI KÓD NA NASTAVENIE (ponechaj ho tu)
+            // const options = Array.from(citySelect.options);
+            // const matchedOption = options.find(opt => ...);
+            // if (matchedOption) { citySelect.value = matchedOption.value; ... }
             
         } else {
             console.error('[SPA GET DEBUG] ❌ City select NOT FOUND with selector:', `[name="${spaConfig.fields.spa_city}"]`);
@@ -527,11 +531,9 @@ window.spa_remove_diacritics = function(str) {
             if (citySelect) {
                 // Skús nájsť option (case-insensitive porovnanie)
                 const options = Array.from(citySelect.options);
-                const matchedOption = options.find(opt => {
-                    const optionText = spa_remove_diacritics(opt.text.trim());
-                    const searchText = cityParam; // už je normalized
-                    return optionText.includes(searchText);
-                });
+                const matchedOption = options.find(opt => 
+                    opt.text.trim().toLowerCase().includes(cityParam.toLowerCase())
+                );
                 
                 if (matchedOption) {
                     citySelect.value = matchedOption.value;
