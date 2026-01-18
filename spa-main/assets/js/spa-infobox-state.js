@@ -186,6 +186,8 @@ window.wizardData = {
         document.addEventListener('change', function(e) {
             if (e.target.name === 'input_1') {
                 console.log('[SPA GET DEBUG] Change event triggered on input_1');
+                console.log('[SPA City Change DEBUG] isApplyingGetParams:', window.isApplyingGetParams);
+                console.log('[SPA City Change DEBUG] Event isTrusted:', e.isTrusted);   
                 console.log('[SPA GET DEBUG] Change event value:', e.target.value);
                 console.log('[SPA GET DEBUG] Change event triggered by:', e.isTrusted ? 'USER' : 'SCRIPT');
             }
@@ -564,15 +566,22 @@ window.wizardData = {
                     clearInterval(checkProgramOption);
                     console.log('[SPA GET] ✅ Program option found:', matchedOption.text);
                     
-                    // ⭐ NASTAV cez jQuery
+                    // ⭐ NASTAV hodnotu
+                    citySelect.value = matchedOption.value;
+                    
+                    // ⭐ TRIGGER change cez jQuery (GF to vyžaduje!)
                     if (typeof jQuery !== 'undefined') {
-                        jQuery(programSelect).val(matchedOption.value).trigger('change');
-                        if (jQuery(programSelect).data('chosen')) {
-                            jQuery(programSelect).trigger('chosen:updated');
+                        jQuery(citySelect).val(matchedOption.value).trigger('change');
+                        
+                        // Ak je Chosen, aktualizuj UI
+                        if (jQuery(citySelect).data('chosen')) {
+                            setTimeout(() => {
+                                jQuery(citySelect).trigger('chosen:updated');
+                            }, 50);
                         }
                     } else {
-                        programSelect.value = matchedOption.value;
-                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        // Fallback: native event
+                        citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
                     // ⭐ OVER či hodnota je nastavená
