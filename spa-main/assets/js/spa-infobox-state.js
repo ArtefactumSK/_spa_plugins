@@ -490,22 +490,28 @@ window.wizardData = {
                         citySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
-                    // ⭐ OVER hodnotu po 100ms
-                    setTimeout(() => {
-                        console.log('[SPA GET City DEBUG] Verifying after 100ms, value:', citySelect.value);
+                    // ⭐ OVER hodnotu viac krát (Chosen plugin potrebuje čas)
+                    let verifyAttempts = 0;
+                    const maxVerify = 10;
+                    
+                    const verifyCityValue = setInterval(() => {
+                        verifyAttempts++;
+                        console.log('[SPA GET City DEBUG] Verify attempt ' + verifyAttempts + ', value:', citySelect.value);
                         
                         if (citySelect.value === matchedOption.value) {
+                            clearInterval(verifyCityValue);
                             window.wizardData.city_name = matchedOption.text;
                             window.spaFormState.city = true;
                             window.currentState = 1;
                             window.spaGFGetState.cityApplied = true;
                             console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
                             resolve(true);
-                        } else {
-                            console.error('[SPA GET] ❌ City value not stable. Current:', citySelect.value, 'Expected:', matchedOption.value);
+                        } else if (verifyAttempts >= maxVerify) {
+                            clearInterval(verifyCityValue);
+                            console.error('[SPA GET] ❌ City value never stabilized. Current:', citySelect.value, 'Expected:', matchedOption.value);
                             resolve(false);
                         }
-                    }, 100);
+                    }, 50);
                 }, 200);
             });
         };
