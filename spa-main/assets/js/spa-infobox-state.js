@@ -506,20 +506,6 @@ window.wizardData = {
                             resolve(false);
                         }
                     }, 100);
-                    // ⭐ OVER či hodnota je nastavená
-                    setTimeout(() => {
-                        if (citySelect.value === matchedOption.value) {
-                            window.wizardData.city_name = matchedOption.text;
-                            window.spaFormState.city = true;
-                            window.currentState = 1;
-                            window.spaGFGetState.cityApplied = true;
-                            console.log('[SPA GET] ✅ City applied OK:', matchedOption.text);
-                            resolve(true);
-                        } else {
-                            console.error('[SPA GET] ❌ City value not stable');
-                            resolve(false);
-                        }
-                    }, 100);
                 }, 200);
             });
         };
@@ -604,16 +590,8 @@ window.wizardData = {
                                 jQuery(programSelect).trigger('chosen:updated');
                             }, 50);
                         }
-                        
-                        // Ak je Chosen, aktualizuj UI
-                        if (jQuery(citySelect).data('chosen')) {
-                            setTimeout(() => {
-                                jQuery(citySelect).trigger('chosen:updated');
-                            }, 50);
-                        }
                     } else {
-                        // Fallback: native event
-                        citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        programSelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     
                     // ⭐ OVER či hodnota je nastavená
