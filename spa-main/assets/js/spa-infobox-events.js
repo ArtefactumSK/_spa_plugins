@@ -74,7 +74,7 @@ if (typeof jQuery !== 'undefined') {
         window.initInfobox();
         window.watchFormChanges();
         window.hideAllSectionsOnInit();
-        // window.applyGetParams();  // ⭐ PRIDANÉ
+        window.applyGetParams(); 
     });
 }
 
