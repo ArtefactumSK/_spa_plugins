@@ -516,31 +516,49 @@ window.wizardData = {
                 );
                 
                 if (matchedOption) {
+                    console.log('[SPA GET] City option found - value:', matchedOption.value, 'text:', matchedOption.text);
+                    console.log('[SPA GET] City select value BEFORE set:', citySelect.value);
+                    
+                    // 1. Nastav hodnotu
                     citySelect.value = matchedOption.value;
-
-                    citySelect.value = matchedOption.value;
-
+                    console.log('[SPA GET] City select value AFTER set:', citySelect.value);
+                    
+                    // 2. Ulož do wizardData (MUSÍ byť PRED triggermi)
                     window.wizardData.city_name = matchedOption.text;
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     stateChanged = true;
                     window.spaGFGetState.cityApplied = true;
-
-                    // ⭐ TRIGGER cez jQuery - GF reaguje LEN na jQuery eventy
+                    
+                    // 3. Trigger cez jQuery
                     if (typeof jQuery !== 'undefined') {
                         jQuery(citySelect).trigger('change').trigger('input');
                         
-                        // Refresh Chosen UI
                         if (jQuery(citySelect).data('chosen')) {
                             jQuery(citySelect).trigger('chosen:updated');
                         }
                         
-                        console.log('[SPA GET] ✅ City applied with jQuery triggers:', matchedOption.text);
+                        console.log('[SPA GET] ✅ City applied with jQuery triggers');
                     } else {
-                        console.error('[SPA GET] jQuery not available - GF will NOT populate program options');
+                        console.error('[SPA GET] ❌ jQuery not available');
                     }
+                    
+                    // 4. Persist check - over či hodnota zostala
+                    setTimeout(() => {
+                        const currentValue = citySelect.value;
+                        console.log('[SPA GET] City persist check:', currentValue, '(expected:', matchedOption.value, ')');
+                        
+                        if (!currentValue || currentValue === '' || currentValue === '0') {
+                            console.warn('[SPA GET] ⚠️ City value lost, re-applying ONCE');
+                            citySelect.value = matchedOption.value;
+                            if (typeof jQuery !== 'undefined') {
+                                jQuery(citySelect).trigger('change');
+                            }
+                        }
+                    }, 300);
                 } else {
-                    console.warn('[SPA GET] City option not found:', cityParam);
+                    console.error('[SPA GET] ❌ City option NOT FOUND for param:', cityParam);
+                    console.log('[SPA GET] Available options:', Array.from(citySelect.options).map(opt => ({ value: opt.value, text: opt.text })));
                 }
             }
         }
