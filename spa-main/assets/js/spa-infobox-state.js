@@ -201,56 +201,46 @@ window.wizardData = {
                 
                 console.log('[SPA City Change] Selected:', selectedCityName);
                 
-                // ⭐ AK ide o GET load, LEN ulož city_name a ZASTAV
-                if (window.isApplyingGetParams) {
-                    console.log('[SPA City Change] GET mode - saving city_name only, NOT calling filterProgramsByCity');
-                    
-                    if (cityField.value && cityField.value !== '0' && cityField.value !== '') {
-                        window.wizardData.city_name = selectedCityName;
-                        window.spaFormState.city = true;
-                        window.currentState = 1;
-                    }
-                    
-                    return; // ⭐ ZASTAV - filterProgramsByCity sa volá z applyGetParams
-                }
-                
-                // ⭐ NORMÁLNY USER CHANGE: RESETUJ PROGRAM
-                window.wizardData.program_name = '';
-                window.wizardData.program_id = null;
-                window.wizardData.program_age = '';
-                window.wizardData.frequency = '';
-                window.spaFormState.program = false;
-                window.spaFormState.frequency = false;
-                
-                // Vyčisti program select
-                const programField = document.querySelector('[name="input_2"]');
-                if (programField) {
-                    programField.value = '';
-                    
-                    // ⭐ FILTRUJ options podľa mesta
-                    if (selectedCityName && selectedCityName.trim() !== '') {
-                        window.filterProgramsByCity(selectedCityName);
-                    }
-                }
-                
-                // VYČISTI frekvenčný selector
-                const frequencySelector = document.querySelector('.spa-frequency-selector');
-                if (frequencySelector) {
-                    frequencySelector.innerHTML = '';
-                }
-                
-                // ⭐ VYČISTI VŠETKY POLIA V SEKCIÁCH
-                window.filterProgramsByCity(selectedCityName);
-                
+                // ⭐ VŽDY ulož city_name
                 if (cityField.value && cityField.value !== '0' && cityField.value !== '') {
                     window.wizardData.city_name = selectedCityName;
                     window.spaFormState.city = true;
                     window.currentState = 1;
                 } else {
-                    // Úplné vymazanie mesta
                     window.wizardData.city_name = '';
                     window.spaFormState.city = false;
                     window.currentState = 0;
+                }
+                
+                // ⭐ RESETUJ PROGRAM len ak NIE JE GET flow
+                if (!window.isApplyingGetParams) {
+                    console.log('[SPA City Change] Normal mode - resetting program');
+                    
+                    window.wizardData.program_name = '';
+                    window.wizardData.program_id = null;
+                    window.wizardData.program_age = '';
+                    window.wizardData.frequency = '';
+                    window.spaFormState.program = false;
+                    window.spaFormState.frequency = false;
+                    
+                    // Vyčisti program select
+                    const programField = document.querySelector('[name="input_2"]');
+                    if (programField) {
+                        programField.value = '';
+                    }
+                    
+                    // VYČISTI frekvenčný selector
+                    const frequencySelector = document.querySelector('.spa-frequency-selector');
+                    if (frequencySelector) {
+                        frequencySelector.innerHTML = '';
+                    }
+                } else {
+                    console.log('[SPA City Change] GET mode - NOT resetting program');
+                }
+                
+                // ⭐ FILTRUJ options vždy (potrebné pre GF conditional logic)
+                if (selectedCityName && selectedCityName.trim() !== '') {
+                    window.filterProgramsByCity(selectedCityName);
                 }
                 
                 window.loadInfoboxContent(window.currentState);
