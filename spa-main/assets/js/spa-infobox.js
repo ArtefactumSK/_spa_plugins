@@ -139,23 +139,24 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
         if (programData.content) {
             programMainHtml += programData.content;
         }
-        
+        // ÚROVEŇ (za rozvrh)
+        /* if (programData.level_html) {
+            programMainHtml += programData.level_html;
+        }
+       */
         // TRÉNINGOVÉ TERMÍNY
         if (programData.schedule) {
             programMainHtml += `
                 <div class="spa-training-schedule">
-                     <!-- <h4 style="font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; color: var(--theme-palette-color-1);">
+                        <div class="spa-program-schedule-title">
                         🕘 Rozvrh tréningového programu
-                    </h4> -->
+                    </div>
                     <div class="spa-program-schedule-grid">
                         ${programData.schedule}
-                    </div>
+                        
+                    </div>${programData.level_html ? programData.level_html : ''}
                 </div>
             `;
-        }
-        // ÚROVEŇ (za rozvrh)
-        if (programData.level_html) {
-            programMainHtml += programData.level_html;
         }
         
         programMainHtml += '</div>'; // .spa-program-content

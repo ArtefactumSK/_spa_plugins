@@ -337,11 +337,8 @@ function spa_ajax_get_infobox_content() {
             ];
             $level_display = isset($level_labels[$level_raw]) ? $level_labels[$level_raw] : $level_raw;
             
-            // Pridaj úroveň do contentu
+            // Obsah programu BEZ úrovne (úroveň sa zobrazí až za rozvrh cez level_html)
             $program_content = apply_filters('the_content', $program_post->post_content);
-            if (!empty($level_display)) {
-                $program_content .= '<p style="margin-bottom: 0px;"><strong>Úroveň:</strong> ' . esc_html($level_display) . '</p>';
-            }
             
             // Načítaj a naformátuj rozvrh (HTML kalendár)
             $schedule_json = get_post_meta($program_id, 'spa_schedule', true);
@@ -369,7 +366,7 @@ function spa_ajax_get_infobox_content() {
                             $schedule_map[$day] = [];
                         }
                         $time_from = substr($item['from'], 0, 5);
-                        $time_to = !empty($item['to']) ? ' – ' . substr($item['to'], 0, 5) : '';
+                        $time_to = !empty($item['to']) ? '-' . substr($item['to'], 0, 5) : '';
                         $schedule_map[$day][] = $time_from . $time_to;
                     }
                     
@@ -413,7 +410,7 @@ function spa_ajax_get_infobox_content() {
                 'spa_price_semester' => get_post_meta($program_id, 'spa_price_semester', true),
                 'spa_external_surcharge' => get_post_meta($program_id, 'spa_external_surcharge', true),
                 'schedule' => $schedule_html,
-                'level_html' => !empty($level_display) ? '<p style="margin-bottom: 0px;"><strong>Úroveň:</strong> ' . esc_html($level_display) . '</p>' : '',
+                'level_html' => !empty($level_display) ? '<p class="spa-program-level">🚦' . esc_html($level_display) . '</p>' : '',
             ];
 
             // Získaj údaje miesta
