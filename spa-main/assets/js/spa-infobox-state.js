@@ -46,15 +46,15 @@ window.spaErrorState = {
         if (window.spaErrorState.invalidCity) {
             const urlParams = new URLSearchParams(window.location.search);
             const cityParam = urlParams.get('city');
-            message = '<h2 class="gform_submission_error">Neplatné mesto v odkaze</h2><p>Mesto "' + cityParam + '" nebolo nájdené. Prosím, vyberte mesto zo zoznamu.</p>';
+            message = '<h2 class="gform_submission_error">⛔ Neplatné mesto v odkaze</h2><p>Mesto "<span>' + cityParam + '</span>" nebolo nájdené. Prosím, vyberte mesto zo zoznamu.</p>';
         } else if (window.spaErrorState.invalidProgram) {
             const urlParams = new URLSearchParams(window.location.search);
             const programParam = urlParams.get('program');
-            message = '<h2 class="gform_submission_error">Neplatný program v odkaze</h2><p>Program s ID "' + programParam + '" nebol nájdený alebo nie je dostupný v zvolenom meste. Prosím, vyberte program zo zoznamu.</p>';
+            message = '<h2 class="gform_submission_error">⛔ Neplatný program v odkaze</h2><p>Program s ID "<span>' + programParam + '</span>" nebol nájdený alebo nie je dostupný v zvolenom meste. Prosím, vyberte program zo zoznamu.</p>';
         } else if (state === 0) {
-            message = '<h2 class="gform_submission_error">Vyberte mesto</h2><p>Prosím, vyberte mesto zo zoznamu.</p>';
+            message = '<h2 class="gform_submission_error">⛔ Vyberte mesto</h2><p>Prosím, vyberte mesto zo zoznamu.</p>';
         } else if (state === 1) {
-            message = '<h2 class="gform_submission_error">Vyberte tréningový program</h2><p>Prosím, vyberte tréningový program zo zoznamu.</p>';
+            message = '<h2 class="gform_submission_error">⛔ Vyberte tréningový program</h2><p>Prosím, vyberte tréningový program zo zoznamu.</p>';
         }
         if (!errorBox) {
             const gformBody = document.querySelector('.gform_body');
@@ -258,7 +258,7 @@ window.spaErrorState = {
                     if (cityField.value && cityField.value !== '0' && cityField.value !== '') {
                         // ⭐ NEPREPIS city_name ak už je nastavené z GET
                         if (!window.wizardData.city_name) {
-                            window.wizardData.city_name = spa_remove_diacritics(selectedCityName);
+                            window.wizardData.city_name = selectedCityName;
                         }
                         window.spaFormState.city = true;
                         window.currentState = 1;
@@ -302,7 +302,7 @@ window.spaErrorState = {
                 
                 if (cityField.value && cityField.value !== '0' && cityField.value !== '') {
                     // ⭐ V normálnom flow (nie GET) vždy prepíš
-                    window.wizardData.city_name = spa_remove_diacritics(selectedCityName);
+                    window.wizardData.city_name = selectedCityName;
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     window.spaErrorState.invalidCity = false;
@@ -628,7 +628,7 @@ window.spa_remove_diacritics = function(str) {
                         console.log('[SPA GET DEBUG] City select value AFTER 500ms:', finalValue?.value);
                         console.log('[SPA GET DEBUG] City select still exists:', !!finalValue);
                     }, 500);
-                    window.wizardData.city_name = spa_remove_diacritics(matchedOption.text);
+                    window.wizardData.city_name = matchedOption.text.trim();
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     stateChanged = true;
