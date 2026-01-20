@@ -186,14 +186,15 @@ window.renderFrequencySelector = function(programData) {
     });
     // Aktualizuj stav page break po renderi frekvencie
     if (activeFrequencies.length === 1) {
-        input.checked = true;
-        window.spaFormState.frequency = true;
+        // Ak je len 1 frekvencia, je automaticky vybraná// Ak je len 1 frekvencia, je automaticky vybraná
+window.spaFormState.frequency = true;
+
+// ⭐ OKAMŽITE AKTUALIZUJ VIDITEĽNOSŤ SEKCIÍ + PAGE BREAK + PREHĽAD
+setTimeout(() => {
+    window.updateSectionVisibility();
+    window.updatePriceSummary(); // ⭐ PRIDANÉ: Aktualizuj prehľad PO nastavení typu
+}, 150);
         
-        // ⭐ OKAMŽITE AKTUALIZUJ VIDITEĽNOSŤ SEKCIÍ + PREHĽAD
-        setTimeout(() => {
-            window.updateSectionVisibility();
-            window.updatePriceSummary(); // ⭐ PRIDANÉ
-        }, 150);
     }
 };
 
