@@ -38,9 +38,8 @@ window.updatePriceSummary = function() {
     
     console.log('[SPA Summary] ========== START ==========');
 
-    // Načítaj typ účastníka (child/adult)
-    const resolvedTypeField = document.querySelector('input[name="input_34"]');
-    const isChild = resolvedTypeField?.value === 'child';
+    // Načítaj typ účastníka z GLOBÁLNEJ PREMENNEJ (nastavuje sa v orchestrator.js)
+    const isChild = window.spaCurrentProgramType === 'child';
 
     // === ZBIERAJ DÁTA ===
     

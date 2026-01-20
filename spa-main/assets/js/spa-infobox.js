@@ -251,7 +251,27 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
 
         // VEK s ikonou
         if (window.wizardData.program_age) {
-            const ageLabel = window.wizardData.program_age.includes('+') ? 'rokov' : 'roky';
+            // Parsuj age_to z program_age (napr. "5–7" alebo "8+")
+            const ageMatch = window.wizardData.program_age.match(/(\d+)[–-](\d+)/);
+            const agePlusMatch = window.wizardData.program_age.match(/(\d+)\+/);
+            
+            let ageLabel = 'rokov'; // default
+            
+            if (agePlusMatch) {
+                // Plus variant (napr. "8+") - vždy "rokov"
+                ageLabel = 'rokov';
+            } else if (ageMatch) {
+                // Rozsah (napr. "5–7") - skloňuj podľa age_to
+                const ageTo = parseInt(ageMatch[2]);
+                if (ageTo === 1) {
+                    ageLabel = 'rok';
+                } else if (ageTo >= 2 && ageTo <= 4) {
+                    ageLabel = 'roky';
+                } else {
+                    ageLabel = 'rokov';
+                }
+            }
+            
             const ageIconSvg = icons && icons.age ? icons.age : '<span class="spa-icon-placeholder">👶</span>';
             
             summaryHtml += `
