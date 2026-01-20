@@ -209,7 +209,7 @@ window.updatePriceSummary = function() {
     let html = '<h6>Prehľad registrácie</h6>';
     html += '<div class="spa-summary-list">';
 
-    // 1. OSOBNÉ ÚDAJE (voliteľné - zobraz čo je vyplnené)
+    // 1. OSOBNÉ ÚDAJE (voliteľné)
     let personalInfoHtml = '';
 
     if (participantName && address) {
@@ -271,35 +271,31 @@ window.updatePriceSummary = function() {
         personalInfoHtml += `<strong>Kontakt na účastníka:</strong> ${contactParts.join(', ')}`;
     }
 
-    // Pridaj OSOBNÉ ÚDAJE len ak niečo existuje
+    // OSOBNÉ ÚDAJE - pridaj len ak niečo existuje
     if (personalInfoHtml) {
         html += `<p>${personalInfoHtml}</p>`;
     }
 
-    // 5. PROGRAM (VŽDY zobraz)
-    let programInfoHtml = '';
-
+    // 5. PROGRAM - VŽDY zobraz (v samostatnom <p>)
     if (programDisplay) {
+        let programInfoHtml = '';
+        
         programInfoHtml += `🤸 <strong>Vybraný program:</strong> ${programDisplay}`;
-    }
-
-    if (placeDisplay) {
-        if (programInfoHtml) programInfoHtml += '<br>';
-        programInfoHtml += `📍 <strong>Miesto tréningov:</strong> ${placeDisplay}`;
-    }
-
-    if (ageCategory && isChild) {
-        if (programInfoHtml) programInfoHtml += '<br>';
-        programInfoHtml += `👶 <strong>Veková kategória:</strong> ${ageCategory}`;
-    }
-
-    if (programInfoHtml) {
-        programInfoHtml += '<br>';
-        programInfoHtml += `ℹ️ <span class="spa-form-warning">Na základe tejto registrácie vás tréner po jej schválení zaradí do vybraného tréningového dňa z dostupných termínov uvedených vyššie.</span>`;
+        
+        if (placeDisplay) {
+            programInfoHtml += `<br>📍 <strong>Miesto tréningov:</strong> ${placeDisplay}`;
+        }
+        
+        if (ageCategory && isChild) {
+            programInfoHtml += `<br>👶 <strong>Veková kategória:</strong> ${ageCategory}`;
+        }
+        
+        programInfoHtml += `<br>ℹ️ <span class="spa-form-warning">Na základe tejto registrácie vás tréner po jej schválení zaradí do vybraného tréningového dňa z dostupných termínov uvedených vyššie.</span>`;
+        
         html += `<p>${programInfoHtml}</p>`;
     }
 
-    // 6. CENA (VŽDY zobraz ak existuje)
+    // 6. CENA (v samostatnom <p>)
     if (frequencyText) {
         const match = frequencyText.match(/^(.+?)\s*[–-]\s*(.+)$/);
         let displayText = frequencyText;
@@ -313,7 +309,7 @@ window.updatePriceSummary = function() {
         html += `<p><strong>Cena / Frekvencia:</strong> ${displayText}</p>`;
     }
 
-    // 7. PLATBA (VŽDY zobraz)
+    // 7. PLATBA (v samostatnom <p>)
     html += `<p><strong>Platba:</strong> Platba po schválení registrácie</p>`;
 
     html += '</div>';
