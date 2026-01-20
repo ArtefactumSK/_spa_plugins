@@ -178,14 +178,15 @@ window.updatePriceSummary = function() {
     let html = '<h6>Prehľad registrácie</h6>';
     html += '<div class="spa-summary-list">';
 
-    // 1. Meno a adresa účastníka
+    // 1. OSOBNÉ ÚDAJE (meno, adresa, vek, kontakt)
+    let personalInfoHtml = '';
+    
     if (participantName && address) {
-        html += `<p><strong>Meno a adresa účastníka:</strong> ${participantName}, ${address}`;
+        personalInfoHtml += `<strong>Meno a adresa účastníka:</strong> ${participantName}, ${address}`;
     }
 
     // 2. Vek účastníka (LEN pre CHILD)
     if (age && isChild) {
-        // Validácia veku vs veková kategória
         let ageWarning = '';
         if (ageCategory && window.infoboxData?.program) {
             const ageYears = parseInt(age);
@@ -199,12 +200,14 @@ window.updatePriceSummary = function() {
             }
         }
         
-        html += `<br><strong>Vek účastníka:</strong> ${age}${ageWarning}`;
+        if (personalInfoHtml) personalInfoHtml += '<br>';
+        personalInfoHtml += `<strong>Vek účastníka:</strong> ${age}${ageWarning}`;
     }
 
     // 3. Zákonný zástupca (LEN child, len ak sú všetky 3 hodnoty)
     if (isChild && guardianName && guardianEmail && guardianPhone) {
-        html += `<br><strong>Zákonný zástupca:</strong> 👩‍👧 ${guardianName}, 
+        if (personalInfoHtml) personalInfoHtml += '<br>';
+        personalInfoHtml += `<strong>Zákonný zástupca:</strong> 👩‍👧 ${guardianName}, 
             <span class="spa-form-contact spa-form-contact-email">✉️ ${guardianEmail}</span>, 
             <span class="spa-form-contact spa-form-contact-phone">📱 ${guardianPhone}</span>`;
     }
@@ -213,60 +216,58 @@ window.updatePriceSummary = function() {
     let participantEmail = '';
     
     if (isChild) {
-        // CHILD: použij input_15
         const childEmailInput = document.querySelector('input[name="input_15"]');
         participantEmail = childEmailInput?.value.trim() || '';
     } else {
-        // ADULT: použij input_16
         const adultEmailInput = document.querySelector('input[name="input_16"]');
         participantEmail = adultEmailInput?.value.trim() || '';
     }
     
-    // Zobraz len ak je ASPOŇ JEDNO pole vyplnené
     if (participantEmail || phone) {
         const contactParts = [];
-
         if (participantEmail) {
-            contactParts.push(
-                `<span class="spa-form-contact spa-form-contact-email">✉️ ${participantEmail}</span>`
-            );
+            contactParts.push(`<span class="spa-form-contact spa-form-contact-email">✉️ ${participantEmail}</span>`);
         }
-
         if (phone) {
-            contactParts.push(
-                `<span class="spa-form-contact spa-form-contact-phone">📱 ${phone}</span>`
-            );
+            contactParts.push(`<span class="spa-form-contact spa-form-contact-phone">📱 ${phone}</span>`);
         }
-
-        html += `<br><strong>Kontakt na účastníka:</strong> ${contactParts.join(', ')}`;
+        
+        if (personalInfoHtml) personalInfoHtml += '<br>';
+        personalInfoHtml += `<strong>Kontakt na účastníka:</strong> ${contactParts.join(', ')}`;
     }
     
-    html += '</p>';
+    // Uzavri OSOBNÉ ÚDAJE ako jeden <p> blok
+    if (personalInfoHtml) {
+        html += `<p>${personalInfoHtml}</p>`;
+    }
 
-    // 5. Vybraný program
+    // 5. PROGRAM (program, miesto, veková kategória, info)
+    let programInfoHtml = '';
+    
     if (programDisplay) {
-        html += `<p>🤸 <strong>Vybraný program:</strong> ${programDisplay}`;
+        programInfoHtml += `🤸 <strong>Vybraný program:</strong> ${programDisplay}`;
     }
 
-    // 6. Miesto tréningov
     if (placeDisplay) {
-        html += `<br>📍 <strong>Miesto tréningov:</strong> ${placeDisplay}`;
+        if (programInfoHtml) programInfoHtml += '<br>';
+        programInfoHtml += `📍 <strong>Miesto tréningov:</strong> ${placeDisplay}`;
     }
 
-    // 7. Veková kategória (LEN pre CHILD)
     if (ageCategory && isChild) {
-        html += `<br>👶 <strong>Veková kategória:</strong> ${ageCategory}`;
+        if (programInfoHtml) programInfoHtml += '<br>';
+        programInfoHtml += `👶 <strong>Veková kategória:</strong> ${ageCategory}`;
     }
 
-    // 8. Rozvrh
-    /* if (schedule) {
-        html += `<br>🕘 <strong>Rozvrh:</strong> ${schedule}</p>`;
-    } */
-     html += `<br>ℹ️ <span class="spa-form-warning">Na základe tejto registrácie vás tréner po jej schválení zaradí do vybraného tréningového dňa z dostupných termínov uvedených vyššie.</span>`;
+    if (programInfoHtml) programInfoHtml += '<br>';
+    programInfoHtml += `ℹ️ <span class="spa-form-warning">Na základe tejto registrácie vás tréner po jej schválení zaradí do vybraného tréningového dňa z dostupných termínov uvedených vyššie.</span>`;
+    
+    // Uzavri PROGRAM ako jeden <p> blok
+    if (programInfoHtml) {
+        html += `<p>${programInfoHtml}</p>`;
+    }
 
-    // 9. Cena/Frekvencia
+    // 6. CENA
     if (frequencyText) {
-        // Preformátuj z "1× týždenne – 50,00 €" → "50,00 € / 1× týždenne"
         const match = frequencyText.match(/^(.+?)\s*[–-]\s*(.+)$/);
         let displayText = frequencyText;
         
@@ -279,7 +280,7 @@ window.updatePriceSummary = function() {
         html += `<p><strong>Cena / Frekvencia:</strong> ${displayText}</p>`;
     }
 
-    // 10. Platba (vždy zobrazená)
+    // 7. PLATBA
     html += `<p><strong>Platba:</strong> Platba po schválení registrácie</p>`;
 
     html += '</div>';
