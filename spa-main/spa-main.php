@@ -54,7 +54,7 @@ function spa_enqueue_infobox_scripts() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'fields' => [
             'spa_city' => 'input_1',
-            'spa_program' => 'input_12'
+            'spa_program' => 'input_2'
         ]
     ]);
 }

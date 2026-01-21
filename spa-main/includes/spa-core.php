@@ -235,7 +235,7 @@ add_action('wp_ajax_nopriv_spa_get_programs', 'spa_ajax_get_programs');
 function spa_get_programs_for_city_dynamic($city_name) {
     global $wpdb;
     error_log('[SPA Programs Dynamic] Looking for city: ' . $city_name);
-    // KROK 1: Nájdi spa_place pre dané mesto
+    // KROK 1: Nájdi VŠETKY spa_place pre dané mesto (odstráň LIMIT 1)
     $place_sql = $wpdb->prepare("
         SELECT p.ID
         FROM {$wpdb->posts} p
@@ -244,21 +244,22 @@ function spa_get_programs_for_city_dynamic($city_name) {
         AND p.post_status = 'publish'
         AND pm.meta_key = 'spa_place_city'
         AND pm.meta_value = %s
-        LIMIT 1
     ", $city_name);
     
-    $place_id = $wpdb->get_var($place_sql);
+    $place_ids = $wpdb->get_col($place_sql);  // Zmeň na get_col pre array IDs
     
-    // KROK 2: Ak spa_place má definované programy v postmeta
+    // KROK 2: Ak spa_place má definované programy v postmeta (nezmenené)
     $program_slugs = [];
-    if ($place_id) {
-        $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
-        if (!empty($programs_meta) && is_array($programs_meta)) {
-            $program_slugs = $programs_meta;
+    if (!empty($place_ids)) {  // Prejdi všetkými place_ids
+        foreach ($place_ids as $place_id) {
+            $programs_meta = get_post_meta($place_id, 'spa_place_programs', true);
+            if (!empty($programs_meta) && is_array($programs_meta)) {
+                $program_slugs = array_merge($program_slugs, $programs_meta);  // Spoj slugs zo všetkých
+            }
         }
     }
     
-    // KROK 3: Načítaj spa_group programy PODĽA spa_place_id
+    // KROK 3: Načítaj spa_group programy PODĽA spa_place_id (zmeň na IN)
     $args = [
         'post_type' => 'spa_group',
         'post_status' => 'publish',
@@ -267,19 +268,19 @@ function spa_get_programs_for_city_dynamic($city_name) {
         'order' => 'ASC',
     ];
     
-    // ⭐ FILTRUJ PODĽA spa_place_id (nie slugs!)
-    if ($place_id) {
+    // ⭐ FILTRUJ PODĽA všetkých spa_place_id (nie slugs!)
+    if (!empty($place_ids)) {
         $args['meta_query'] = [
             [
                 'key' => 'spa_place_id',
-                'value' => $place_id,
-                'compare' => '='
+                'value' => $place_ids,  // Array IDs
+                'compare' => 'IN'  // Zmeň na IN
             ]
         ];
-        error_log('[SPA Programs Dynamic] Filtering by place_id: ' . $place_id);
+        error_log('[SPA Programs Dynamic] Filtering by place_ids: ' . implode(', ', $place_ids));
     } else {
-        // Ak nenašiel place_id, vráť prázdny zoznam
-        error_log('[SPA Programs Dynamic] No place_id found for city: ' . $city_name);
+        // Ak nenašiel place_ids, vráť prázdny zoznam
+        error_log('[SPA Programs Dynamic] No place_ids found for city: ' . $city_name);
         return [];
     }
     
@@ -412,52 +413,6 @@ function spa_format_program_label($title, $age_from, $age_to, $target = null) {
  * @param string $target Typ účastníka
  * @return string Formátovaný label
  */
-/* function spa_format_program_label($title, $age_from, $age_to, $target) {
-    // Konverzia na float a zachovanie desatinnej časti
-    $age_from_float = !empty($age_from) ? floatval($age_from) : 0;
-    $age_to_float = !empty($age_to) ? floatval($age_to) : null;
-    
-    $prefix = '';
-    
-    switch ($target) {
-        case 'child':
-            $prefix = 'pre deti';
-            
-            if ($age_from_float > 0 && $age_to_float !== null) {
-                $age_from_str = spa_format_age_display($age_from_float);
-                $age_to_str = spa_format_age_display($age_to_float);
-                $prefix .= " {$age_from_str} - {$age_to_str} r.";
-            } elseif ($age_from_float > 0) {
-                $age_from_str = spa_format_age_display($age_from_float);
-                $prefix .= " {$age_from_str}+ r.";
-            }
-            break;
-            
-        case 'youth':
-            $prefix = 'pre mládež';
-            
-            if ($age_from_float > 0 && $age_to_float !== null) {
-                $age_from_str = spa_format_age_display($age_from_float);
-                $age_to_str = spa_format_age_display($age_to_float);
-                $prefix .= " {$age_from_str} - {$age_to_str} r.";
-            } elseif ($age_from_float > 0) {
-                $age_from_str = spa_format_age_display($age_from_float);
-                $prefix .= " {$age_from_str}+ r.";
-            }
-            break;
-            
-        case 'adult':
-            $prefix = 'pre dospelých';
-            
-            if ($age_from_float > 0) {
-                $age_from_str = spa_format_age_display($age_from_float);
-                $prefix .= " {$age_from_str}+ r.";
-            }
-            break;
-    }
-    
-    return $prefix . ' / ' . $title;
-} */
 
 function spa_format_age_display($age) {
     // Ak je celé číslo (napr. 3.0), zobraz bez desatinnej časti
@@ -468,52 +423,6 @@ function spa_format_age_display($age) {
     // Inak zobraz s čiarkou namiesto bodky
     return str_replace('.', ',', number_format($age, 1, '.', ''));
 }
-
-/**
- * Pridať data-city atribút do program select options
- */
-/* add_filter('gform_field_content', 'spa_add_city_to_program_options', 10, 5);
-
-function spa_add_city_to_program_options($content, $field, $value, $lead_id, $form_id) {
-    // Aplikuj len na Form ID 3 a Field ID 2 (program select)
-    if ($form_id != 3 || $field->id != 2) {
-        return $content;
-    }
-    
-    // Získaj všetky programy a ich mestá
-    $programs = get_posts([
-        'post_type' => 'spa_group',
-        'post_status' => 'publish',
-        'posts_per_page' => -1,
-    ]);
-    
-    foreach ($programs as $program) {
-        // Získaj place_id programu
-        $place_id = get_post_meta($program->ID, 'spa_place_id', true);
-        
-        if (!$place_id) {
-            continue;
-        }
-        
-        // Získaj mesto z place
-        $city_name = get_post_meta($place_id, 'spa_place_city', true);
-        
-        if (empty($city_name)) {
-            continue;
-        }
-        
-        // Nájdi <option> tag pre tento program a pridaj data-city
-        // value="slug-programu"
-        $program_slug = $program->post_name;
-        
-        $pattern = '/<option value="' . preg_quote($program_slug, '/') . '"/';
-        $replacement = '<option value="' . $program_slug . '" data-city="' . esc_attr($city_name) . '"';
-        
-        $content = preg_replace($pattern, $replacement, $content);
-    }
-    
-    return $content;
-} */
 
 /**
  * Pridať data-city atribút do programových choices (Gravity Forms)
