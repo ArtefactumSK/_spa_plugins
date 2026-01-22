@@ -24,7 +24,8 @@ window.wizardData = {
 
 window.spaErrorState = {
     invalidCity: false,
-    invalidProgram: false
+    invalidProgram: false,
+    errorType: null  // 'state' | 'validation'
 };
 
     /**
@@ -48,14 +49,18 @@ window.spaErrorState = {
             const urlParams = new URLSearchParams(window.location.search);
             const cityParam = urlParams.get('city');
             message = '<h2 class="gform_submission_error">⛔ Neplatné mesto v odkaze</h2><p>Mesto "<span>' + cityParam + '</span>" nebolo nájdené. Prosím, vyberte mesto zo zoznamu.</p>';
+            window.spaErrorState.errorType = 'state';
         } else if (window.spaErrorState.invalidProgram) {
             const urlParams = new URLSearchParams(window.location.search);
             const programParam = urlParams.get('program');
             message = '<h2 class="gform_submission_error">⛔ Neplatný program v odkaze</h2><p>Program s ID "<span>' + programParam + '</span>" nebol nájdený alebo nie je dostupný v zvolenom meste. Prosím, vyberte program zo zoznamu.</p>';
+            window.spaErrorState.errorType = 'state';
         } else if (state === 0) {
             message = '<h2 class="gform_submission_error">⛔ Vyberte mesto</h2><p>Prosím, vyberte mesto zo zoznamu.</p>';
+            window.spaErrorState.errorType = 'state';
         } else if (state === 1) {
             message = '<h2 class="gform_submission_error">⛔ Vyberte tréningový program</h2><p>Prosím, vyberte tréningový program zo zoznamu.</p>';
+            window.spaErrorState.errorType = 'state';
         }
         if (!errorBox) {
             const gformBody = document.querySelector('.gform_body');
@@ -309,6 +314,15 @@ window.spaErrorState = {
                     window.spaFormState.city = true;
                     window.currentState = 1;
                     window.spaErrorState.invalidCity = false;
+                
+                    // ⭐ SKRY STATE chyby (ale NIE VALIDATION chyby)
+                    if (window.spaErrorState.errorType === 'state') {
+                        window.spaErrorState.errorType = null;
+                        const errorBox = document.querySelector('.gform_validation_errors');
+                        if (errorBox) {
+                            errorBox.style.display = 'none';
+                        }
+                        }
                 } else {
                     // Úplné vymazanie mesta
                     window.wizardData.city_name = '';
@@ -316,7 +330,7 @@ window.spaErrorState = {
                     window.currentState = 0;
                 }
                 
-                window.loadInfoboxContent(window.currentState);
+                    window.loadInfoboxContent(window.currentState);
                 
                 window.updateSectionVisibility();
                 window.updatePriceSummary(); // ⭐ AKTUALIZUJ PREHĽAD
@@ -345,6 +359,15 @@ window.spaErrorState = {
                     window.wizardData.program_name = selectedOption.text;
                     window.wizardData.program_id = selectedOption.getAttribute('data-program-id') || this.value;
                     window.spaErrorState.invalidProgram = false;
+                    
+                    // ⭐ SKRY STATE chyby (ale NIE VALIDATION chyby)
+                    if (window.spaErrorState.errorType === 'state') {
+                        window.spaErrorState.errorType = null;
+                        const errorBox = document.querySelector('.gform_validation_errors');
+                        if (errorBox) {
+                            errorBox.style.display = 'none';
+                        }
+                    }
                     
                     console.log('[SPA Infobox] Program ID:', window.wizardData.program_id);
                     

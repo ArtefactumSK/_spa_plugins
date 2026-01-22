@@ -28,6 +28,9 @@ function spa_registration_init() {
     // Validácia checkbox group súhlasov
   //  add_filter('gform_validation', 'spa_validate_consents', 10);
     
+    // ⭐ NOVÝ: Označenie validation errorov JS flagom
+    add_filter('gform_validation_message', 'spa_mark_validation_errors', 10, 2);
+    
     // Hook po úspešnom submite
     add_action('gform_after_submission', 'spa_gf_after_submission', 10, 2);
     
@@ -387,4 +390,21 @@ function spa_remove_diacritics_for_email($string) {
     $string = preg_replace('/[^a-zA-Z0-9]/', '', $string);
     
     return $string;
+
+    /**
+     * Označenie validation errorov pre JS
+     * Nastaví window.spaErrorState.errorType = 'validation'
+     */
+    function spa_mark_validation_errors($message, $form) {
+        // ⭐ NASTAV errorType = 'validation' cez JS
+        $message .= '<script>
+            if (window.spaErrorState) {
+                window.spaErrorState.errorType = "validation";
+                console.log("[SPA] GF Validation error type set to: validation");
+            }
+        </script>';
+        
+        return $message;
+    }
+
 }
