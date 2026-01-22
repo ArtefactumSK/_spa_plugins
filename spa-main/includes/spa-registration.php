@@ -31,6 +31,12 @@ function spa_registration_init() {
     // ⭐ NOVÝ: Označenie validation errorov JS flagom
     add_filter('gform_validation_message', 'spa_mark_validation_errors', 10, 2);
     
+    // ⭐ NOVÝ: Validácia povinných súhlasov
+    add_filter('gform_validation', 'spa_validate_required_consents', 10);
+    
+    // ⭐ NOVÝ: Označenie validation errorov JS flagom
+    add_filter('gform_validation_message', 'spa_mark_validation_errors', 10, 2);
+    
     // Hook po úspešnom submite
     add_action('gform_after_submission', 'spa_gf_after_submission', 10, 2);
     
@@ -207,6 +213,41 @@ function spa_validate_phone_conditionally($result, $value, $form, $field) {
     }
     
     return $result;
+}
+
+/**
+ * Validácia povinných súhlasov
+ * Hook: gform_validation
+ */
+function spa_validate_required_consents($validation_result) {
+    $form = $validation_result['form'];
+    $resolved_type = rgpost('input_34');
+    
+    // Field 35 = checkbox group (4 povinné súhlasy)
+    $consent_gdpr = rgpost('input_35_1');
+    $consent_health = rgpost('input_35_2');
+    $consent_statutes = rgpost('input_35_3');
+    $consent_terms = rgpost('input_35_4');
+    
+    // Validácia súhlasov (pre obidva typy)
+    if (empty($consent_gdpr) || empty($consent_health) || empty($consent_statutes) || empty($consent_terms)) {
+        $validation_result['is_valid'] = false;
+        spa_set_field_error($form, 35, 'Musíte súhlasiť so všetkými povinnými súhlasmi.');
+        error_log('[SPA VALIDATION] Consents missing');
+    }
+    
+    // Field 42 = checkbox potvrdenia zákonného zástupcu (len CHILD)
+    if ($resolved_type === 'child') {
+        $consent_guardian = rgpost('input_42_1');
+        if (empty($consent_guardian)) {
+            $validation_result['is_valid'] = false;
+            spa_set_field_error($form, 42, 'Musíte potvrdiť, že ste zákonný zástupca dieťaťa.');
+            error_log('[SPA VALIDATION] Guardian confirmation missing');
+        }
+    }
+    
+    $validation_result['form'] = $form;
+    return $validation_result;
 }
 
 /**
@@ -608,5 +649,51 @@ function spa_remove_diacritics_for_email($string) {
         
         return $message;
     }
+    
+    /**
+     * Helper: Odstránenie diakritiky
+     */
+    function spa_remove_diacritics_for_email($string) {
+        $diacritics = [
+            'á'=>'a','ä'=>'a','č'=>'c','ď'=>'d','é'=>'e','í'=>'i',
+            'ľ'=>'l','ĺ'=>'l','ň'=>'n','ó'=>'o','ô'=>'o','ŕ'=>'r',
+            'š'=>'s','ť'=>'t','ú'=>'u','ý'=>'y','ž'=>'z',
+            'Á'=>'A','Ä'=>'A','Č'=>'C','Ď'=>'D','É'=>'E','Í'=>'I',
+            'Ľ'=>'L','Ĺ'=>'L','Ň'=>'N','Ó'=>'O','Ô'=>'O','Ŕ'=>'R',
+            'Š'=>'S','Ť'=>'T','Ú'=>'U','Ý'=>'Y','Ž'=>'Z'
+        ];
+        
+        $string = strtr($string, $diacritics);
+        $string = preg_replace('/[^a-zA-Z0-9]/', '', $string);
+        
+        return $string;
+    }
 
+    /**
+     * Označenie validation errorov pre JS
+     * Nastaví window.spaErrorState.errorType = 'validation'
+     */
+    function spa_mark_validation_errors($message, $form) {
+        $message .= '<script>
+            if (window.spaErrorState) {
+                window.spaErrorState.errorType = "validation";
+                console.log("[SPA] GF Validation error type set to: validation");
+            }
+        </script>';
+        
+        return $message;
+    }
+
+    /**
+     * Helper: Nastavenie chyby pre field
+     */
+    function spa_set_field_error(&$form, $field_id, $message) {
+        foreach ($form['fields'] as &$field) {
+            if ($field->id == $field_id) {
+                $field->failed_validation = true;
+                $field->validation_message = $message;
+                break;
+            }
+        }
+    }
 }
