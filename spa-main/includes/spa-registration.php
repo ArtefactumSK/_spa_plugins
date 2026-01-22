@@ -395,10 +395,23 @@ function spa_debug_validation_result($validation_result) {
     return $validation_result;
 }
 
-/**
- * Helper: Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
- */
-function spa_convert_date_to_iso($date_string) {
+    /**
+     * Helper: Nastavenie chyby pre field
+     */
+    function spa_set_field_error(&$form, $field_id, $message) {
+        foreach ($form['fields'] as &$field) {
+            if ($field->id == $field_id) {
+                $field->failed_validation = true;
+                $field->validation_message = $message;
+                break;
+            }
+        }
+    }
+
+    /**
+     * Helper: Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
+     */
+    function spa_convert_date_to_iso($date_string) {
     if (empty($date_string)) {
         return '';
     }
@@ -664,9 +677,24 @@ function spa_remove_diacritics_for_email($string) {
         ];
         
         $string = strtr($string, $diacritics);
-        $string = preg_replace('/[^a-zA-Z0-9]/', '', $string);
+    $string = preg_replace('/[^a-zA-Z0-9]/', '', $string);
+    
+    return $string;
+    }
+
+    /**
+     * Označenie validation errorov pre JS
+     * Nastaví window.spaErrorState.errorType = 'validation'
+     */
+    function spa_mark_validation_errors($message, $form) {
+        $message .= '<script>
+            if (window.spaErrorState) {
+                window.spaErrorState.errorType = "validation";
+                console.log("[SPA] GF Validation error type set to: validation");
+            }
+        </script>';
         
-        return $string;
+        return $message;
     }
 
     /**
