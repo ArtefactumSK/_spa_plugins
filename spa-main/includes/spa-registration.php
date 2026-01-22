@@ -376,21 +376,21 @@ function spa_debug_validation_result($validation_result) {
     /**
      * Helper: Konverzia dátumu z GF formátu (d.m.Y) na ISO (Y-m-d)
      */
-    function spa_convert_date_to_iso($date_string) {
-    if (empty($date_string)) {
-        return '';
-    }
-    
-    // GF vracia dátum v formáte d.m.Y (napr. 15.03.2010)
-    $date = DateTime::createFromFormat('d.m.Y', $date_string);
-    
-    if (!$date) {
-        error_log('[SPA ERROR] Invalid date format: ' . $date_string);
-        return '';
-    }
-    
-    return $date->format('Y-m-d');
-}
+    /*     function spa_convert_date_to_iso($date_string) {
+        if (empty($date_string)) {
+            return '';
+        }
+        
+        // GF vracia dátum v formáte d.m.Y (napr. 15.03.2010)
+        $date = DateTime::createFromFormat('d.m.Y', $date_string);
+        
+        if (!$date) {
+            error_log('[SPA ERROR] Invalid date format: ' . $date_string);
+            return '';
+        }
+        
+        return $date->format('Y-m-d');
+    } */
 
 /**
  * Helper: Odstránenie diakritiky
