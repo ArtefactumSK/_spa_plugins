@@ -73,13 +73,71 @@ window.clearAllSectionFields = function() {
         ].filter(Boolean).join(' ');
 
         let address = '';
-        const addressSingleInput = document.querySelector('input[name="input_17"]'); // Adresa
-        if (addressSingleInput) {
+        const addressSingleInput = document.querySelector('input[name="input_17"]');
+        const addressStreetInput = document.querySelector('input[name="input_17.1"]');
+        const addressCityInput = document.querySelector('input[name="input_17.3"]');
+        if (addressSingleInput && addressSingleInput.value.trim()) {
             address = addressSingleInput.value.trim();
+        } else if (addressStreetInput || addressCityInput) {
+            const parts = [];
+            if (addressStreetInput && addressStreetInput.value.trim()) parts.push(addressStreetInput.value.trim());
+            if (addressCityInput && addressCityInput.value.trim()) parts.push(addressCityInput.value.trim());
+            address = parts.filter(Boolean).join(', ');
         }
 
         const phoneInput = document.querySelector('input[name="input_19"]'); // Telefón účastníka
         const phone = phoneInput?.value.trim();
+
+        // Vek účastníka (len CHILD)
+        let ageYears = null;
+        let ageDisplay = '';
+        if (isChild) {
+            const birthdateInput = document.querySelector('input[name="input_7"]');
+            const birthdate = birthdateInput?.value.trim();
+            if (birthdate) {
+                const parts = birthdate.split('.');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    const birth = new Date(year, month, day);
+                    const today = new Date();
+                    ageYears = today.getFullYear() - birth.getFullYear();
+                    const monthDiff = today.getMonth() - birth.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                        ageYears--;
+                    }
+                    ageDisplay = ageYears + ' rokov';
+                }
+            }
+        }
+
+        // Zákonný zástupca (len CHILD)
+        let guardianName = '';
+        let guardianEmail = '';
+        let guardianPhone = '';
+        if (isChild) {
+            const guardianFirstInput = document.querySelector('input[name="input_18.3"]');
+            const guardianLastInput = document.querySelector('input[name="input_18.6"]');
+            guardianName = [
+                guardianFirstInput?.value.trim(),
+                guardianLastInput?.value.trim()
+            ].filter(Boolean).join(' ');
+            const guardianEmailInput = document.querySelector('input[name="input_12"]');
+            guardianEmail = guardianEmailInput?.value.trim() || '';
+            const guardianPhoneInput = document.querySelector('input[name="input_13"]');
+            guardianPhone = guardianPhoneInput?.value.trim() || '';
+        }
+
+        // Email účastníka
+        let participantEmail = '';
+        if (isChild) {
+            const childEmailInput = document.querySelector('input[name="input_15"]');
+            participantEmail = childEmailInput?.value.trim() || '';
+        } else {
+            const adultEmailInput = document.querySelector('input[name="input_16"]');
+            participantEmail = adultEmailInput?.value.trim() || '';
+        }
 
         let programDisplay = window.wizardData?.program_name || '';
         // Miesto tréningov
@@ -129,9 +187,40 @@ window.clearAllSectionFields = function() {
             personalInfoHtml += `<strong>Adresa účastníka:</strong> ${address}`;
         }
         
-        if (phone) {
+        // Vek účastníka + age-warning (len CHILD)
+        if (isChild && ageDisplay) {
             if (personalInfoHtml) personalInfoHtml += '<br>';
-            personalInfoHtml += `<strong>Telefón:</strong> ${phone}`;
+            personalInfoHtml += `<strong>Vek účastníka:</strong> ${ageDisplay}`;
+            
+            // Age-warning kontrola
+            if (ageYears !== null && window.infoboxData?.program) {
+                const ageMin = parseFloat(window.infoboxData.program.age_min);
+                const ageMax = parseFloat(window.infoboxData.program.age_max);
+                if (!isNaN(ageMin) && !isNaN(ageMax) && (ageYears < ageMin || ageYears > ageMax)) {
+                    personalInfoHtml += ' <span class="spa-form-warning">⚠️ Vek účastníka nezodpovedá vybranému programu!</span>';
+                } else if (!isNaN(ageMin) && isNaN(ageMax) && ageYears < ageMin) {
+                    personalInfoHtml += ' <span class="spa-form-warning">⚠️ Vek účastníka nezodpovedá vybranému programu!</span>';
+                }
+            }
+        }
+
+        // Zákonný zástupca (len CHILD)
+        if (isChild && (guardianName || guardianEmail || guardianPhone)) {
+            if (personalInfoHtml) personalInfoHtml += '<br>';
+            let guardianParts = [];
+            if (guardianName) guardianParts.push(guardianName);
+            if (guardianEmail) guardianParts.push('✉️ ' + guardianEmail);
+            if (guardianPhone) guardianParts.push('📱 ' + guardianPhone);
+            personalInfoHtml += `<strong>Zákonný zástupca:</strong> ${guardianParts.join(', ')}`;
+        }
+
+        // Kontakt účastníka (email + telefón)
+        let contactParts = [];
+        if (participantEmail) contactParts.push('✉️ ' + participantEmail);
+        if (phone) contactParts.push('📱 ' + phone);
+        if (contactParts.length > 0) {
+            if (personalInfoHtml) personalInfoHtml += '<br>';
+            personalInfoHtml += `<strong>Kontakt na účastníka:</strong> ${contactParts.join(', ')}`;
         }
         
         if (personalInfoHtml) {
