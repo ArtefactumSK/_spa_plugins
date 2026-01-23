@@ -1,6 +1,7 @@
 /**
  * SPA Infobox Wizard – sekcie
  */
+
 /**
  * Vyčistenie všetkých polí v sekciách
  */

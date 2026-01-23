@@ -418,8 +418,8 @@ function spa_validate_registration_form($validation_result) {
     // === SPOLOČNÉ VALIDÁCIE (CHILD aj ADULT) ===
     
     // Meno účastníka
-    $first_name = rgpost('input_6_3');
-    $last_name = rgpost('input_6_6');
+    $first_name = rgpost('input_6.3'); // Meno
+    $last_name  = rgpost('input_6.6'); // Priezvisko    
     
     if (empty(trim($first_name)) || empty(trim($last_name))) {
         foreach ($form['fields'] as &$field) {
@@ -432,9 +432,10 @@ function spa_validate_registration_form($validation_result) {
     }
     
     // Adresa - ulica, mesto, PSČ
-    $address_street = rgpost('input_17_1');
-    $address_city = rgpost('input_17_3');
-    $address_zip = rgpost('input_17_5');
+    $address_street = rgpost('input_17.1'); // Ulica
+    $address_city   = rgpost('input_17.3'); // Mesto
+    $address_zip    = rgpost('input_17.5'); // PSČ
+
     
     $address_errors = [];
     if (empty(trim($address_street))) $address_errors[] = 'ulica';
@@ -557,7 +558,7 @@ function spa_validate_registration_form($validation_result) {
         }
         
         // Súhlas zákonného zástupcu (checkbox 42)
-        $guardian_consent = rgpost('input_42_1');
+        $guardian_consent = rgpost('input_42.1'); // Súhlas zákonného zástupcu
         if (empty($guardian_consent)) {
             foreach ($form['fields'] as &$field) {
                 if ($field->id == 42) {
@@ -599,10 +600,10 @@ function spa_validate_registration_form($validation_result) {
     
     // === GDPR SÚHLASY (OBA TYPY) ===
     // Field 35 má 4 checkboxy - všetky povinné
-    $consent_1 = rgpost('input_35_1'); // GDPR
-    $consent_2 = rgpost('input_35_2'); // Zdravotné údaje
-    $consent_3 = rgpost('input_35_3'); // Stanovy
-    $consent_4 = rgpost('input_35_4'); // Podmienky
+    $consent_1 = rgpost('input_35.1'); // GDPR
+    $consent_2 = rgpost('input_35.2'); // Zdravotné údaje
+    $consent_3 = rgpost('input_35.3'); // Stanovy
+    $consent_4 = rgpost('input_35.4'); // Podmienky
     
     if (empty($consent_1) || empty($consent_2) || empty($consent_3) || empty($consent_4)) {
         foreach ($form['fields'] as &$field) {
