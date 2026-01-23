@@ -292,6 +292,7 @@ document.addEventListener('change', function(e) {
         'input_17.1',               // Adresa - ulica
         'input_17.3',               // Adresa - mesto
         'input_7',                  // Dátum narodenia
+        'input_8',                  // Rodné číslo
         'input_19',                 // Telefón účastníka
         'input_18.3', 'input_18.6', // Meno zástupcu
         'input_12',                 // Email zástupcu
