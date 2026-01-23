@@ -112,6 +112,13 @@ window.clearAllSectionFields = function() {
             }
         }
 
+        // Rodné číslo (len CHILD)
+        let birthNumber = '';
+        if (isChild) {
+            const birthNumberInput = document.querySelector('input[name="input_8"]');
+            birthNumber = birthNumberInput?.value.trim() || '';
+        }
+
         // Zákonný zástupca (len CHILD)
         let guardianName = '';
         let guardianEmail = '';
@@ -202,6 +209,11 @@ window.clearAllSectionFields = function() {
                     personalInfoHtml += ' <span class="spa-form-warning">⚠️ Vek účastníka nezodpovedá vybranému programu!</span>';
                 }
             }
+        }
+        // Rodné číslo (len CHILD)
+        if (isChild && birthNumber) {
+            if (personalInfoHtml) personalInfoHtml += '<br>';
+            personalInfoHtml += `<strong>Rodné číslo:</strong> ${birthNumber}`;
         }
 
         // Zákonný zástupca (len CHILD)
