@@ -31,6 +31,9 @@ function spa_registration_init() {
     // Hook po úspešnom submite
     add_action('gform_after_submission', 'spa_gf_after_submission', 10, 2);
     
+    // Kompletná validácia registrácie
+    add_filter('gform_validation', 'spa_validate_registration_form', 20);
+    
     // DEBUG hook
     add_filter('gform_validation', 'spa_debug_validation_result', 999);
 }
@@ -388,3 +391,232 @@ function spa_remove_diacritics_for_email($string) {
     
     return $string;
 }
+
+
+/**
+ * Kompletná validácia registračného formulára
+ * CHILD: meno, adresa, dátum narodenia, rodné číslo, vek v tolerancii, zákonný zástupca, súhlas 42
+ * ADULT: meno, adresa, email, telefón, súhlasy 35
+ */
+function spa_validate_registration_form($validation_result) {
+    $form = $validation_result['form'];
+    
+    // Zisti form ID - aplikuj len na registračný formulár
+    // TODO: Uprav form ID podľa skutočného ID
+    // if ($form['id'] != YOUR_FORM_ID) {
+    //     return $validation_result;
+    // }
+    
+    $resolved_type = rgpost('input_34');
+    error_log('[SPA VALIDATION] Resolved type: ' . $resolved_type);
+    
+    // Ak nie je určený typ, skonči
+    if (empty($resolved_type)) {
+        return $validation_result;
+    }
+    
+    // === SPOLOČNÉ VALIDÁCIE (CHILD aj ADULT) ===
+    
+    // Meno účastníka
+    $first_name = rgpost('input_6_3');
+    $last_name = rgpost('input_6_6');
+    
+    if (empty(trim($first_name)) || empty(trim($last_name))) {
+        foreach ($form['fields'] as &$field) {
+            if ($field->id == 6) {
+                $field->failed_validation = true;
+                $field->validation_message = 'Meno a priezvisko účastníka sú povinné.';
+                $validation_result['is_valid'] = false;
+            }
+        }
+    }
+    
+    // Adresa - ulica, mesto, PSČ
+    $address_street = rgpost('input_17_1');
+    $address_city = rgpost('input_17_3');
+    $address_zip = rgpost('input_17_5');
+    
+    $address_errors = [];
+    if (empty(trim($address_street))) $address_errors[] = 'ulica';
+    if (empty(trim($address_city))) $address_errors[] = 'mesto';
+    if (empty(trim($address_zip))) $address_errors[] = 'PSČ';
+    
+    if (!empty($address_errors)) {
+        foreach ($form['fields'] as &$field) {
+            if ($field->id == 17) {
+                $field->failed_validation = true;
+                $field->validation_message = 'Adresa je povinná: chýba ' . implode(', ', $address_errors) . '.';
+                $validation_result['is_valid'] = false;
+            }
+        }
+    }
+    
+    // === CHILD VALIDÁCIE ===
+    if ($resolved_type === 'child') {
+        
+        // Dátum narodenia
+        $birthdate = rgpost('input_7');
+        if (empty(trim($birthdate))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 7) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Dátum narodenia je povinný.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Rodné číslo
+        $birth_number = rgpost('input_8');
+        if (empty(trim($birth_number))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 8) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Rodné číslo je povinné.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Vek v tolerancii programu
+        if (!empty($birthdate)) {
+            $program_id = rgpost('input_2');
+            
+            if (!empty($program_id) && is_numeric($program_id)) {
+                $age_min = get_post_meta($program_id, 'spa_age_min', true);
+                $age_max = get_post_meta($program_id, 'spa_age_max', true);
+                
+                // Vypočítaj vek
+                $birth_date = DateTime::createFromFormat('d.m.Y', $birthdate);
+                if ($birth_date) {
+                    $today = new DateTime();
+                    $age = $birth_date->diff($today)->y;
+                    
+                    $age_min_float = floatval($age_min);
+                    $age_max_float = floatval($age_max);
+                    
+                    $age_error = false;
+                    
+                    if (!empty($age_min) && !empty($age_max)) {
+                        if ($age < $age_min_float || $age > $age_max_float) {
+                            $age_error = true;
+                        }
+                    } elseif (!empty($age_min) && $age < $age_min_float) {
+                        $age_error = true;
+                    }
+                    
+                    if ($age_error) {
+                        foreach ($form['fields'] as &$field) {
+                            if ($field->id == 7) {
+                                $field->failed_validation = true;
+                                $field->validation_message = 'Vek účastníka (' . $age . ' rokov) nezodpovedá vekovej kategórii programu (' . $age_min . '-' . $age_max . ' r.).';
+                                $validation_result['is_valid'] = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Zákonný zástupca - meno
+        $guardian_first = rgpost('input_18_3');
+        $guardian_last = rgpost('input_18_6');
+        
+        if (empty(trim($guardian_first)) || empty(trim($guardian_last))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 18) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Meno a priezvisko zákonného zástupcu sú povinné.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Zákonný zástupca - email
+        $guardian_email = rgpost('input_12');
+        if (empty(trim($guardian_email))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 12) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'E-mail zákonného zástupcu je povinný.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Zákonný zástupca - telefón
+        $guardian_phone = rgpost('input_13');
+        if (empty(trim($guardian_phone))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 13) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Telefón zákonného zástupcu je povinný.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Súhlas zákonného zástupcu (checkbox 42)
+        $guardian_consent = rgpost('input_42_1');
+        if (empty($guardian_consent)) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 42) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Potvrdenie zákonného zástupcu je povinné.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+    }
+    
+    // === ADULT VALIDÁCIE ===
+    if ($resolved_type === 'adult') {
+        
+        // Email účastníka
+        $adult_email = rgpost('input_16');
+        if (empty(trim($adult_email))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 16) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'E-mail účastníka je povinný.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+        
+        // Telefón účastníka
+        $adult_phone = rgpost('input_19');
+        if (empty(trim($adult_phone))) {
+            foreach ($form['fields'] as &$field) {
+                if ($field->id == 19) {
+                    $field->failed_validation = true;
+                    $field->validation_message = 'Telefón účastníka je povinný.';
+                    $validation_result['is_valid'] = false;
+                }
+            }
+        }
+    }
+    
+    // === GDPR SÚHLASY (OBA TYPY) ===
+    // Field 35 má 4 checkboxy - všetky povinné
+    $consent_1 = rgpost('input_35_1'); // GDPR
+    $consent_2 = rgpost('input_35_2'); // Zdravotné údaje
+    $consent_3 = rgpost('input_35_3'); // Stanovy
+    $consent_4 = rgpost('input_35_4'); // Podmienky
+    
+    if (empty($consent_1) || empty($consent_2) || empty($consent_3) || empty($consent_4)) {
+        foreach ($form['fields'] as &$field) {
+            if ($field->id == 35) {
+                $field->failed_validation = true;
+                $field->validation_message = 'Všetky súhlasy sú povinné.';
+                $validation_result['is_valid'] = false;
+            }
+        }
+    }
+    
+    $validation_result['form'] = $form;
+    
+    return $validation_result;
+}
+
+add_filter('gform_validation', 'spa_validate_registration_form', 20);
