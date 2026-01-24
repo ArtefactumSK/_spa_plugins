@@ -330,9 +330,8 @@ window.spaErrorState = {
                     window.currentState = 0;
                 }
                 
-                    window.loadInfoboxContent(window.currentState);
-                
-                window.updateSectionVisibility();
+                window.loadInfoboxContent(window.currentState); // ⭐ NAČÍTAJ INFOBOX CONTENT
+                window.updateSectionVisibility(); // ⭐ AKTUALIZUJ VIDITEĽNOST SEKCIÍ
                 window.updatePriceSummary(); // ⭐ AKTUALIZUJ PREHĽAD
             }
         });

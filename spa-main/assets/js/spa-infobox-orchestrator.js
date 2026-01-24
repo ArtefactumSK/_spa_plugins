@@ -281,23 +281,32 @@ window.toggleSection = function(sectionElement, show) {
             break;
         }
 
+        // ⭐ GUARD: spa-field-health NIKDY neskrývaj
+        if (nextElement.classList.contains('spa-field-health')) {
+            nextElement.style.display = 'block';
+            const healthInput = nextElement.querySelector('input, textarea');
+            if (healthInput) {
+                healthInput.disabled = false;
+            }
+            console.log('[SPA toggleSection] spa-field-health: FORCED VISIBLE');
+            nextElement = nextElement.nextElementSibling;
+            continue;
+        }
+
         // ⭐ ŠPECIÁLNE: Telefón účastníka (input_19) - VŽDY zobraz ak je AKÝKOĽVEK program vybraný
         const phoneField = nextElement.querySelector('input[name="input_19"]');
         if (phoneField) {
             const phoneWrapper = phoneField.closest('.gfield');
             if (phoneWrapper) {
-                // Skontroluj GLOBÁLNY stav programu (nie len lokálny show parameter)
                 const isProgramSelected = !!(window.wizardData.program_name && window.wizardData.program_name.trim() !== '');
                 
                 if (isProgramSelected) {
-                    // Program vybraný - VŽDY ZOBRAZ
                     phoneWrapper.style.display = '';
                     phoneWrapper.style.visibility = 'visible';
                     phoneWrapper.style.opacity = '1';
                     phoneField.disabled = false;
                     console.log('[SPA toggleSection] Phone field: FORCED VISIBLE (program selected globally)');
                 } else {
-                    // Žiadny program - SKRY
                     phoneWrapper.style.display = 'none';
                     phoneField.disabled = true;
                     console.log('[SPA toggleSection] Phone field: HIDDEN (no program)');
@@ -363,15 +372,13 @@ window.toggleSection = function(sectionElement, show) {
             
             if (birthNumberWrapper) {
                 if (show && isChildProgram) {
-                    // Zobraz LEN pre CHILD
                     birthNumberWrapper.style.display = 'block';
                     birthNumberField.disabled = false;
                     console.log('[SPA toggleSection] Birth number: VISIBLE (CHILD program)');
                 } else {
-                    // Skry pre ADULT alebo ak sekcia sa skrýva
                     birthNumberWrapper.style.display = 'none';
                     birthNumberField.disabled = true;
-                    birthNumberField.value = ''; // Vyčisti hodnotu
+                    birthNumberField.value = '';
                     console.log('[SPA toggleSection] Birth number: HIDDEN (ADULT program)');
                 }
             }
@@ -380,7 +387,6 @@ window.toggleSection = function(sectionElement, show) {
             continue;
         }
 
-        // â­ DEBUG: Loguj ak nastavujeÅ¡ display:none
         if (!show) {
             console.log('[DEBUG toggleSection] Setting display:none on element:', {
                 class: nextElement.className,
@@ -389,18 +395,13 @@ window.toggleSection = function(sectionElement, show) {
             });
         }
 
-        // EXCEPTION: ak section má triedu spa-section-common A show === true
-        // → polia sa NESMÚ skrývať, zobraz všetky elementy v sekcii
         if (sectionElement.classList.contains('spa-section-common') && show) {
             nextElement.style.display = 'block';
         } else {
-            // Zobraz/skry ostatnÃ© elementy
             nextElement.style.display = show ? 'block' : 'none';
         }
         
-        // ⭐ ENABLE/DISABLE všetky polia v elemente (OKREM input_8)
         if (show) {
-            // Pri zobrazení ENABLE všetky polia
             const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
             inputs.forEach(input => {
                 input.disabled = false;
@@ -408,7 +409,6 @@ window.toggleSection = function(sectionElement, show) {
                 input.style.pointerEvents = 'auto';
             });
         } else {
-            // Pri skrytí DISABLE všetky polia
             const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
             inputs.forEach(input => {
                 input.disabled = true;
