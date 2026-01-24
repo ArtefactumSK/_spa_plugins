@@ -389,7 +389,7 @@ window.toggleSection = function(sectionElement, show) {
             });
         }
 
-        // â­ EXCEPTION: ak section má triedu spa-section-common A show === true
+        // EXCEPTION: ak section má triedu spa-section-common A show === true
         // → polia sa NESMÚ skrývať, zobraz všetky elementy v sekcii
         if (sectionElement.classList.contains('spa-section-common') && show) {
             nextElement.style.display = 'block';
@@ -397,9 +397,6 @@ window.toggleSection = function(sectionElement, show) {
             // Zobraz/skry ostatnÃ© elementy
             nextElement.style.display = show ? 'block' : 'none';
         }
-
-        // Zobraz/skry ostatné elementy
-        nextElement.style.display = show ? 'block' : 'none';
         
         // ⭐ ENABLE/DISABLE všetky polia v elemente (OKREM input_8)
         if (show) {
