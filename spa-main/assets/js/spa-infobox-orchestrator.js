@@ -380,13 +380,22 @@ window.toggleSection = function(sectionElement, show) {
             continue;
         }
 
-        // ⭐ DEBUG: Loguj ak nastavuješ display:none
+        // â­ DEBUG: Loguj ak nastavujeÅ¡ display:none
         if (!show) {
             console.log('[DEBUG toggleSection] Setting display:none on element:', {
                 class: nextElement.className,
                 id: nextElement.id || 'no-id',
                 hasSummary: !!nextElement.querySelector('.spa-price-summary')
             });
+        }
+
+        // â­ EXCEPTION: ak section má triedu spa-section-common A show === true
+        // → polia sa NESMÚ skrývať, zobraz všetky elementy v sekcii
+        if (sectionElement.classList.contains('spa-section-common') && show) {
+            nextElement.style.display = 'block';
+        } else {
+            // Zobraz/skry ostatnÃ© elementy
+            nextElement.style.display = show ? 'block' : 'none';
         }
 
         // Zobraz/skry ostatné elementy
