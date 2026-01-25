@@ -840,6 +840,7 @@ window.spa_remove_diacritics = function(str) {
                         
                         // Načítaj infobox pre state 2
                         window.loadInfoboxContent(window.currentState);
+                        window.updateSectionVisibility();
                         } else {
                             console.warn('[SPA GET] ⚠️ Program option not found:', programParam);
                             window.spaErrorState.invalidProgram = true;

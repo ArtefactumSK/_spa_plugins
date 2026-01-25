@@ -37,6 +37,13 @@ window.hideAllSectionsOnInit = function() {
         console.log('[SPA Init] Hidden: Adult email field (input_16)');
     }
     
+    // ⭐ SKRY spa-field-health pri INIT
+    const healthField = document.querySelector('.spa-field-health');
+    if (healthField) {
+        healthField.style.display = 'none';
+        console.log('[SPA Init] Hidden: spa-field-health');
+    }
+    
     // Skry všetky sekcie podľa CSS tried
     const sections = [
         'spa-section-common',
@@ -224,8 +231,32 @@ window.updateSectionVisibility = function() {
     });
 
 
+    // ⭐ GUARD: Skontroluj canShowSections
+    const canShowSections = window.spaFormState.city === true && window.spaFormState.program === true;
+    
+    console.log('[SPA Section Control] canShowSections:', canShowSections, {
+        cityState: window.spaFormState.city,
+        programState: window.spaFormState.program
+    });
+    
+    // ⭐ RIADENIE spa-field-health
+    const healthField = document.querySelector('.spa-field-health');
+    if (healthField) {
+        if (canShowSections) {
+            healthField.style.display = 'block';
+            const healthInput = healthField.querySelector('input, textarea');
+            if (healthInput) {
+                healthInput.disabled = false;
+            }
+            console.log('[SPA Section Control] ✅ Health field: VISIBLE');
+        } else {
+            healthField.style.display = 'none';
+            console.log('[SPA Section Control] ❌ Health field: HIDDEN (canShowSections=false)');
+        }
+    }
+    
     // LOGIKA ZOBRAZOVANIA: stačí programSelected (mesto + program)
-    if (programSelected) {
+    if (programSelected && canShowSections) {
         // 1. SPOLOČNÁ SEKCIA: vždy zobrazená (VŠETKY commonSections)
         commonSections.forEach(section => {
             window.toggleSection(section, true);
@@ -246,6 +277,10 @@ window.updateSectionVisibility = function() {
         }
     } else {
         // Skry VŠETKY sekcie
+        const healthFieldFallback = document.querySelector('.spa-field-health');
+        if (healthFieldFallback) {
+            healthFieldFallback.style.display = 'none';
+        }
         commonSections.forEach(section => window.toggleSection(section, false));
         adultSections.forEach(section => window.toggleSection(section, false));
         childSections.forEach(section => window.toggleSection(section, false));
@@ -281,14 +316,25 @@ window.toggleSection = function(sectionElement, show) {
             break;
         }
 
-        // ⭐ GUARD: spa-field-health NIKDY neskrývaj
+        // ⭐ GUARD: spa-field-health - rešpektuj canShowSections
         if (nextElement.classList.contains('spa-field-health')) {
-            nextElement.style.display = 'block';
-            const healthInput = nextElement.querySelector('input, textarea');
-            if (healthInput) {
-                healthInput.disabled = false;
+            const canShowSections = window.spaFormState.city === true && window.spaFormState.program === true;
+            
+            if (canShowSections && show) {
+                nextElement.style.display = 'block';
+                const healthInput = nextElement.querySelector('input, textarea');
+                if (healthInput) {
+                    healthInput.disabled = false;
+                }
+                console.log('[SPA toggleSection] spa-field-health: VISIBLE (canShowSections=true)');
+            } else {
+                nextElement.style.display = 'none';
+                const healthInput = nextElement.querySelector('input, textarea');
+                if (healthInput) {
+                    healthInput.disabled = true;
+                }
+                console.log('[SPA toggleSection] spa-field-health: HIDDEN (canShowSections=false)');
             }
-            console.log('[SPA toggleSection] spa-field-health: FORCED VISIBLE');
             nextElement = nextElement.nextElementSibling;
             continue;
         }
