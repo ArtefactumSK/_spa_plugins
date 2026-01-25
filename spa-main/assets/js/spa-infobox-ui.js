@@ -246,7 +246,7 @@ document.addEventListener('change', function(e) {
     if (!e.target?.name) return;
     
     const relevant = [
-        'input_6.3','input_6.6','input_17','input_17.1','input_17.3',
+        'input_6.3','input_6.6','input_9','input_17','input_17.1','input_17.3',
         'input_7','input_8','input_19',
         'input_18.3','input_18.6','input_12','input_13',
         'input_15','input_16','spa_frequency'

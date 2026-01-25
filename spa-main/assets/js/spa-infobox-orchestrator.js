@@ -8,494 +8,291 @@ window.spaCurrentProgramType = null;
 /**
  * Skrytie všetkých sekcií pri inicializácii
  */
-window.hideAllSectionsOnInit = function() {
-    console.log('[SPA Init] ========== HIDING ALL SECTIONS ==========');
-    
-    // ⭐ GUARD: Neexecutuj ak už boli sekcie skryté
+window.hideAllSectionsOnInit = function () {
+    console.log('[SPA Init] ========== INIT RESET ==========');
+
     if (window.spa_sections_hidden) {
-        console.log('[SPA Init] Sections already hidden, skipping');
+        console.log('[SPA Init] Already initialized, skipping');
         return;
     }
-    
-    // Skry pole "Kto bude účastníkom tréningov?"
-    const registrationTypeField = document.querySelector('.gfield--input-type-radio');
-    if (registrationTypeField) {
-        registrationTypeField.style.display = 'none';
-        console.log('[SPA Init] Hidden: Registration type field (input_4)');
-    }
-    
-    // ⭐ Skry EMAIL polia
-    const childEmailField = document.querySelector('input[name="input_15"]')?.closest('.gfield');
-    const adultEmailField = document.querySelector('input[name="input_16"]')?.closest('.gfield');
-    
-    if (childEmailField) {
-        childEmailField.style.display = 'none';
-        console.log('[SPA Init] Hidden: Child email field (input_15)');
-    }
-    if (adultEmailField) {
-        adultEmailField.style.display = 'none';
-        console.log('[SPA Init] Hidden: Adult email field (input_16)');
-    }
-    
-    // Skry všetky sekcie podľa CSS tried
-    const sections = [
+
+    /* ----------------------------------------------------
+     * 1️⃣ Skry výber typu účastníka
+     * ---------------------------------------------------- */
+    document
+        .querySelectorAll('.gfield--input-type-radio')
+        .forEach(el => {
+            el.style.display = 'none';
+            console.log('[SPA Init] Hidden: registration type radio');
+        });
+
+    /* ----------------------------------------------------
+     * 2️⃣ Skry email polia (len init)
+     * ---------------------------------------------------- */
+    ['input_15', 'input_16'].forEach(name => {
+        const field = document.querySelector(`input[name="${name}"]`)?.closest('.gfield');
+        if (field) {
+            field.style.display = 'none';
+            console.log(`[SPA Init] Hidden: ${name}`);
+        }
+    });
+
+    /* ----------------------------------------------------
+     * 3️⃣ Skry SPA sekcie (common / adult / child)
+     * ---------------------------------------------------- */
+    [
         'spa-section-common',
         'spa-section-adult',
         'spa-section-child'
-    ];
-
-    sections.forEach(cssClass => {
-        // ⭐ Nájdi VŠETKY sekcie s danou triedou (nie len prvú!)
-        const allSections = document.querySelectorAll(`.${cssClass}`);
-        
-        console.log(`[SPA Init] Found ${allSections.length} sections with class: ${cssClass}`);
-        
-        allSections.forEach(section => {
+    ].forEach(cls => {
+        document.querySelectorAll(`.${cls}`).forEach(section => {
             window.toggleSection(section, false);
-            console.log(`[SPA Init] ❌ Hidden: ${cssClass} (ID: ${section.id || 'no-id'})`);
+            console.log(`[SPA Init] ❌ Hidden section: ${cls}`);
         });
     });
-    
-    // ⭐ CASE 0 DEFAULT: Skry pole Zdravotné obmedzenia
-    // Používame selektor textarea[name="input_9"] namiesto field_3_9 ID
-    // Toto pole NIE JE v .gfield--type-section, preto ho toggleSection() neriadi
-    // Musí sa skryť manuálne a zobraziť až v updateSectionVisibility() keď programSelected = true
-    const healthTextarea = document.querySelector('textarea[name="input_9"]');
-    if (healthTextarea) {
-        const healthField = healthTextarea.closest('.gfield');
-        if (healthField) {
-            healthField.style.display = 'none';
-            console.log('[SPA HEALTH FLOW] ❌ Hidden: health field (textarea input_9) - CASE 0 init');
+
+    /* ----------------------------------------------------
+     * 4️⃣ FOUC ochrana – IBA pagebreak
+     * ❗ input_9 SA TU UŽ NESKRÝVA
+     * ---------------------------------------------------- */
+    const hidePagebreak = () => {
+        const pb = document.querySelector('.gform_page_footer');
+        if (pb) {
+            pb.style.display = 'none';
+            console.log('[SPA Init] ❌ Hidden: pagebreak');
+            return true;
         }
-    } else {
-        console.warn('[SPA HEALTH FLOW] ⚠️ textarea[name="input_9"] NOT FOUND in DOM');
-    }
-    
-    // ⭐ CASE 0 DEFAULT: Skry pagebreak tlačidlo
-    // Pagebreak má logiku v updateSectionVisibility(), ale tá sa v CASE 0 NEVOLÁ
-    // Preto musí byť DEFAULT HIDDEN a zobraziť sa až keď programSelected = true
-    const pagebreak = document.querySelector('.gform_page_footer');
-    if (pagebreak) {
-        pagebreak.style.display = 'none';
-        console.log('[SPA HEALTH FLOW] ❌ Hidden: pagebreak (.gform_page_footer) - CASE 0 init');
-    } else {
-        console.warn('[SPA HEALTH FLOW] ⚠️ .gform_page_footer NOT FOUND in DOM');
-    }
-    
-    // ⭐ OKAMŽITE skry health field a pagebreak (ak už existujú v DOM)
-    // Toto je prvý pokus - môže zlyhať ak GF ešte nevyrendroval polia
-    const healthTextareaInit = document.querySelector('textarea[name="input_9"]');
-    if (healthTextareaInit) {
-        const healthFieldInit = healthTextareaInit.closest('.gfield');
-        if (healthFieldInit) {
-            healthFieldInit.style.display = 'none';
-            console.log('[SPA HEALTH FLOW] ❌ Hidden: health field (EARLY init) - ID:', healthFieldInit.id);
-        }
-    } else {
-        console.log('[SPA HEALTH FLOW] ⚠️ Health field NOT YET in DOM (will hide later)');
-    }
-    
-    const pagebreakInit = document.querySelector('.gform_page_footer');
-    if (pagebreakInit) {
-        pagebreakInit.style.display = 'none';
-        console.log('[SPA HEALTH FLOW] ❌ Hidden: pagebreak (EARLY init)');
-    } else {
-        console.log('[SPA HEALTH FLOW] ⚠️ Pagebreak NOT YET in DOM (will hide later)');
-    }
-    
-    // ⭐ Označ že sekcie boli skryté
+        return false;
+    };
+
+    // okamžitý pokus
+    hidePagebreak();
+
+    // fallback po GF renderi
+    setTimeout(hidePagebreak, 0);
+
+    /* ----------------------------------------------------
+     * 5️⃣ Final
+     * ---------------------------------------------------- */
     window.spa_sections_hidden = true;
-    console.log('[SPA Init] ========== SECTIONS HIDDEN COMPLETE ==========');
+    console.log('[SPA Init] ========== INIT COMPLETE ==========');
 };
+
 
 /**
  * RIADENIE VIDITEĽNOSTI SEKCIÍ
  */
-window.updateSectionVisibility = function() {
+window.updateSectionVisibility = function () {
     console.log('[SPA Section Control] ========== UPDATE START ==========');
-    console.log('[SPA Section Control] State:', {
-        city: window.wizardData.city_name,
-        program: window.wizardData.program_name,
-        frequency: window.spaFormState.frequency
-    });
 
-    // ⭐ DVE RÔZNE PODMIENKY:
-    // 1. Pre zobrazenie poľa input_4: mesto + program (neprázdne hodnoty!)
-    const programSelected = !!(
-        window.wizardData.city_name && 
-        window.wizardData.city_name.trim() !== '' &&
-        window.wizardData.program_name && 
-        window.wizardData.program_name.trim() !== ''
-    );
-    
-    // 2. Pre zobrazenie sekcií: mesto + program + frekvencia
-    const allSelected = !!(
-        window.wizardData.city_name && 
-        window.wizardData.program_name && 
-        window.spaFormState.frequency
-    );
+    const citySelected = !!(window.wizardData.city_name && window.wizardData.city_name.trim() !== '');
+    const programSelected = !!(window.wizardData.program_name && window.wizardData.program_name.trim() !== '');
+    const canShowProgramFlow = citySelected && programSelected;
 
-    console.log('[SPA Section Control] Conditions:', {
-        programSelected,
-        allSelected
-    });
-
-    // ⭐ KRITICKÁ KONTROLA: Skry health field a pagebreak v CASE 0/1
-    // Toto je FAIL-SAFE - zabezpečuje skrytie aj keď hideAllSectionsOnInit() ich nenašlo
-    const healthTextareaUpdate = document.querySelector('textarea[name="input_9"]');
-    if (healthTextareaUpdate) {
-        const healthFieldUpdate = healthTextareaUpdate.closest('.gfield');
-        if (healthFieldUpdate) {
-            // Skry v CASE 0/1, zobraz v CASE 2
-            healthFieldUpdate.style.display = programSelected ? 'block' : 'none';
-            console.log('[SPA HEALTH FLOW]', programSelected ? '✅ VISIBLE' : '❌ HIDDEN', 'health field - programSelected:', programSelected);
-        }
-    } else {
-        console.warn('[SPA HEALTH FLOW] ⚠️ textarea[name="input_9"] NOT FOUND in updateSectionVisibility()');
-    }
-    
-    // Pagebreak kontrola
-    const pagebreakUpdate = document.querySelector('.gform_page_footer');
-    if (pagebreakUpdate) {
-        pagebreakUpdate.style.display = programSelected ? '' : 'none';
-        console.log('[SPA HEALTH FLOW]', programSelected ? '✅ VISIBLE' : '❌ HIDDEN', 'pagebreak - programSelected:', programSelected);
-    } else {
-        console.warn('[SPA HEALTH FLOW] ⚠️ .gform_page_footer NOT FOUND in updateSectionVisibility()');
-    }
-
-    // ⭐ ZÍSKAJ age_min priamo z programu (nie z data atribútu)
-    let isChildProgram = false;
-
-    // ⭐ Deklaruj birthNumberField na začiatku (potrebné neskôr)
-    const birthNumberField = document.querySelector('input[name="input_8"]');
-
-    // Pokús sa získať age_min z vybraného programu
+    // PROGRAM TYPE (iba program, nie účastník)
+    let programType = null; // 'child' | 'adult'
     const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
     if (programField && programField.value) {
-        const selectedOption = programField.options[programField.selectedIndex];
-        const ageMin = parseInt(selectedOption.getAttribute('data-age-min'));
-        
-        if (!isNaN(ageMin)) {
-            isChildProgram = ageMin < 18;
-        }
+        const opt = programField.options[programField.selectedIndex];
+        const ageMin = parseInt(opt?.getAttribute('data-age-min'), 10);
+        if (!isNaN(ageMin)) programType = ageMin < 18 ? 'child' : 'adult';
     }
+    window.spaCurrentProgramType = programType;
 
-    // Fallback: skontroluj data-is-child atribút
-    if (!programField || !programField.value) {
-        isChildProgram = birthNumberField?.getAttribute('data-is-child') === 'true';
-    }
+    // PARTICIPANT TYPE (radio input_4) – len do hidden fieldu
+    const participantRadio = document.querySelector('input[name="input_4"]:checked');
+    const participantType = participantRadio
+        ? (participantRadio.value.toLowerCase().includes('dieť') ? 'child' : 'adult')
+        : null;
 
-    console.log('[SPA Section Control] Program type:', {
-        isChildProgram,
-        source: programField?.value ? 'age_min' : 'data-is-child'
-    });
-    // ⭐ ULOŽ DO GLOBÁLNEJ PREMENNEJ
-    window.spaCurrentProgramType = isChildProgram ? 'child' : 'adult';
-
-    // ⭐ ZAPÍŠ RESOLVED TYPE DO HIDDEN FIELD (input_34)
     const resolvedTypeField = document.querySelector('input[name="input_34"]');
-    if (resolvedTypeField) {
-        const resolvedValue = isChildProgram ? 'child' : 'adult';
-        resolvedTypeField.value = resolvedValue;
-        console.log('[SPA Section Control] Resolved type written to input_34:', resolvedValue);
-    } else {
-        console.warn('[SPA Section Control] ⚠️ Hidden field input_34 NOT FOUND');
-    }
+    if (resolvedTypeField) resolvedTypeField.value = participantType || '';
 
-    // ⭐ POLE "Kto bude účastníkom tréningov?" (input_4)
-    // Zobrazuje sa hneď po výbere PROGRAMU (nie až po frekvencii)
+    // input_4 visibility + auto-select podľa PROGRAM TYPE
     const registrationTypeField = document.querySelector('.gfield--input-type-radio');
-    
     if (registrationTypeField) {
-        if (programSelected) {  // ← ZMENA: stačí program
-            // 1. NAJPRV ZOBRAZ pole
-            registrationTypeField.style.display = '';
-            console.log('[SPA Section Control] Registration type field: VISIBLE (program selected)');
-            
-            // 2. ⭐ POČKAJ NA RENDER a POTOM OZNAČ radio button
-            setTimeout(() => {
-                // Nájdi všetky radio buttony
-                const allRadios = document.querySelectorAll('input[name="input_4"]');
-                
-                console.log('[SPA Section Control] Found radio buttons:', allRadios.length);
-                
-                let childRadio = null;
-                let adultRadio = null;
-                
-                // Identifikuj ich podľa value/label
-                allRadios.forEach(radio => {
-                    const value = radio.value.toLowerCase();
-                    const label = radio.parentElement?.textContent?.toLowerCase() || '';
-                    
-                    if (value.includes('dieťa') || value.includes('diet') || 
-                        label.includes('dieťa') || label.includes('diet') || 
-                        label.includes('mladší')) {
-                        childRadio = radio;
-                    }
-                    
-                    if (value.includes('dospel') || value.includes('18+') || 
-                        label.includes('dospel') || label.includes('18+')) {
-                        adultRadio = radio;
-                    }
-                });
-                
-                console.log('[SPA Section Control] Radio identification:', {
-                    childRadio: !!childRadio,
-                    adultRadio: !!adultRadio,
-                    isChildProgram: isChildProgram
-                });
-                
-                // OZNAČ správny radio button a DISABLE druhý
-                if (isChildProgram && childRadio) {
-                    childRadio.checked = true;
-                    childRadio.disabled = false;
-                    if (adultRadio) {
-                        adultRadio.checked = false;
-                        adultRadio.disabled = true; // ⭐ DISABLE adult pre CHILD program
-                    }
-                    console.log('[SPA Section Control] ✅ CHILD radio CHECKED, ADULT disabled');
-                } else if (!isChildProgram && adultRadio) {
-                    adultRadio.checked = true;
-                    adultRadio.disabled = false;
-                    if (childRadio) {
-                        childRadio.checked = false;
-                        childRadio.disabled = true; // ⭐ DISABLE child pre ADULT program
-                    }
-                    console.log('[SPA Section Control] ✅ ADULT radio CHECKED, CHILD disabled');
+        registrationTypeField.style.display = canShowProgramFlow ? '' : 'none';
+
+        if (canShowProgramFlow && programType) {
+            const radios = document.querySelectorAll('input[name="input_4"]');
+            radios.forEach(radio => {
+                const isChild = radio.value.toLowerCase().includes('dieť');
+                radio.disabled = false;
+
+                if (programType === 'child') {
+                    radio.checked = isChild;
+                    radio.disabled = !isChild;
+                } else {
+                    radio.checked = !isChild;
+                    radio.disabled = isChild;
                 }
-            }, 100);
-            
-        } else {
-            // Skry pole ak nie je program vybraný
-            registrationTypeField.style.display = 'none';
-            
-            // ⭐ ENABLE všetky radio buttony pri resete
-            const allRadios = document.querySelectorAll('input[name="input_4"]');
-            allRadios.forEach(radio => {
-                radio.checked = false;
-                radio.disabled = false; // ⭐ ENABLE pri skrytí
             });
-            
-            console.log('[SPA Section Control] Registration type field: HIDDEN (no program)');
+        }
+
+        if (!canShowProgramFlow) {
+            document.querySelectorAll('input[name="input_4"]').forEach(r => {
+                r.checked = false;
+                r.disabled = false;
+            });
         }
     }
-    
-    
-    // ⭐ Použijeme querySelectorAll aby sme našli VŠETKY sekcie
+
+    // SEKČIE
     const commonSections = document.querySelectorAll('.spa-section-common');
-    const adultSections = document.querySelectorAll('.spa-section-adult');
     const childSections = document.querySelectorAll('.spa-section-child');
+    const adultSections = document.querySelectorAll('.spa-section-adult');
 
-    console.log('[SPA Section Control] Sections found:', {
-        common: commonSections.length,
-        adult: adultSections.length,
-        child: childSections.length
-    });
-
-
-    // LOGIKA ZOBRAZOVANIA: stačí programSelected (mesto + program)
-    if (programSelected) {
-        // 1. SPOLOČNÁ SEKCIA: vždy zobrazená (VŠETKY commonSections)
-        commonSections.forEach(section => {
-            window.toggleSection(section, true);
-        });
-        console.log('[SPA Section Control] ✅ Common sections: VISIBLE');
-        
-        // 2. CHILD alebo ADULT sekcie podľa age_from
-        if (isChildProgram) {
-            childSections.forEach(section => window.toggleSection(section, true));
-            adultSections.forEach(section => window.toggleSection(section, false));
-            console.log('[SPA Section Control] ✅ Child sections: VISIBLE');
-            console.log('[SPA Section Control] ❌ Adult sections: HIDDEN');
-        } else {
-            adultSections.forEach(section => window.toggleSection(section, true));
-            childSections.forEach(section => window.toggleSection(section, false));
-            console.log('[SPA Section Control] ✅ Adult sections: VISIBLE');
-            console.log('[SPA Section Control] ❌ Child sections: HIDDEN');
-        }
+    if (!canShowProgramFlow) {
+        [...commonSections, ...childSections, ...adultSections].forEach(sec => window.toggleSection(sec, false));
     } else {
-        // Skry VŠETKY sekcie
-        commonSections.forEach(section => window.toggleSection(section, false));
-        adultSections.forEach(section => window.toggleSection(section, false));
-        childSections.forEach(section => window.toggleSection(section, false));
-        console.log('[SPA Section Control] ❌ All sections: HIDDEN (no program selected)');
+        commonSections.forEach(sec => window.toggleSection(sec, true));
+
+        if (programType === 'child') {
+            childSections.forEach(sec => window.toggleSection(sec, true));
+            adultSections.forEach(sec => window.toggleSection(sec, false));
+        } else {
+            adultSections.forEach(sec => window.toggleSection(sec, true));
+            childSections.forEach(sec => window.toggleSection(sec, false));
+        }
     }
-    
-    // ⭐ KONTROLA: Zobraz/skry pagebreak (.gform_page_footer)
-    // Pagebreak sa zobrazuje LEN v CASE 2 (programSelected = true)
-    // V CASE 0/1 musí byť SKRYTÝ
+
+    // === EXPLICITNÉ RIADENIE KRITICKÝCH POLÍ ===
+    // input_9 – health restrictions (vždy riadené tu, nie sekciami)
+    const healthField = document.querySelector('textarea[name="input_9"]');
+    if (healthField) {
+        const shouldBeVisible = canShowProgramFlow;
+        const wrap = healthField.closest('.gfield');
+        if (wrap) {
+            wrap.style.display = shouldBeVisible ? 'block' : 'none';
+        }
+        healthField.disabled = !shouldBeVisible;
+        healthField.style.visibility = shouldBeVisible ? 'visible' : 'hidden';
+        healthField.style.opacity = shouldBeVisible ? '1' : '0';
+        console.log('[SPA HEALTH FLOW]', shouldBeVisible ? 'VISIBLE + ENABLED' : 'HIDDEN + DISABLED');
+    } else {
+        console.warn('[SPA HEALTH FLOW] ⚠️ input_9 NOT FOUND');
+    }
+
+    // input_15 – email dieťaťa
+    const emailChild = document.querySelector('input[name="input_15"]');
+    if (emailChild) {
+        const visible = canShowProgramFlow && programType === 'child';
+        const wrap = emailChild.closest('.gfield');
+        if (wrap) wrap.style.display = visible ? 'block' : 'none';
+        //emailChild.disabled = !visible;
+        if (!visible) emailChild.value = '';
+    }
+
+    // input_16 – email dospelý
+    const emailAdult = document.querySelector('input[name="input_16"]');
+    if (emailAdult) {
+        const visible = canShowProgramFlow && programType === 'adult';
+        const wrap = emailAdult.closest('.gfield');
+        if (wrap) wrap.style.display = visible ? 'block' : 'none';
+        //emailAdult.disabled = !visible;
+        if (!visible) emailAdult.value = '';
+    }
+
+    // input_8 – rodné číslo (dieťa)
+    const birthNumber = document.querySelector('input[name="input_8"]');
+    if (birthNumber) {
+        const visible = canShowProgramFlow && programType === 'child';
+        const wrap = birthNumber.closest('.gfield');
+        if (wrap) wrap.style.display = visible ? 'block' : 'none';
+        birthNumber.disabled = !visible;
+        if (!visible) birthNumber.value = '';
+    }
+
+    // input_19 – telefón účastníka
+    const phone = document.querySelector('input[name="input_19"]');
+    if (phone) {
+        const visible = canShowProgramFlow;
+        const wrap = phone.closest('.gfield');
+        if (wrap) wrap.style.display = visible ? 'block' : 'none';
+        //phone.disabled = !visible;
+    }
+
+    // pagebreak
     const pagebreak = document.querySelector('.gform_page_footer');
     if (pagebreak) {
-        pagebreak.style.display = programSelected ? '' : 'none';
-        console.log('[SPA HEALTH FLOW]', programSelected ? '✅ VISIBLE' : '❌ HIDDEN', 'pagebreak - programSelected:', programSelected);
+        pagebreak.style.display = canShowProgramFlow ? '' : 'none';
     }
 
     console.log('[SPA Section Control] ========== UPDATE END ==========');
 };
-
  
 /**
-     * Zobraz/skry sekciu + všetky nasledujúce polia až po ďalšiu sekciu
-     */
-window.toggleSection = function(sectionElement, show) {
+ * Zobraz/skry sekciu + všetky nasledujúce polia až po ďalšiu sekciu
+ */
+window.toggleSection = function (sectionElement, show) {
     if (!sectionElement) return;
 
     sectionElement.style.display = show ? 'block' : 'none';
 
-    let nextElement = sectionElement.nextElementSibling;
+    let next = sectionElement.nextElementSibling;
 
-    while (nextElement) {
-        if (nextElement.classList.contains('gfield--type-section')) {
-            break;
-        }
+    while (next) {
+        if (next.classList.contains('gfield--type-section')) break;
 
-        // ⭐ GUARD: spa-field-health - rešpektuj canShowSections
-        if (nextElement.classList.contains('spa-field-health')) {
-            const canShowSections = window.spaFormState.city === true && window.spaFormState.program === true;
-            
-            if (canShowSections && show) {
-                nextElement.style.display = 'block';
-                const healthInput = nextElement.querySelector('input, textarea');
-                if (healthInput) {
-                    healthInput.disabled = false;
-                }
-                console.log('[SPA toggleSection] spa-field-health: VISIBLE (canShowSections=true)');
-            } else {
-                nextElement.style.display = 'none';
-                const healthInput = nextElement.querySelector('input, textarea');
-                if (healthInput) {
-                    healthInput.disabled = true;
-                }
-                console.log('[SPA toggleSection] spa-field-health: HIDDEN (canShowSections=false)');
-            }
-            nextElement = nextElement.nextElementSibling;
+        // ❌ spa-field-health tu už neriešime (riadi ho updateSectionVisibility)
+
+        // Telefón účastníka (input_19) – len ak je program vybraný globálne
+        const phone = next.querySelector('input[name="input_19"]');
+        if (phone) {
+            const wrap = phone.closest('.gfield');
+            const canShow = !!(window.wizardData.program_name && window.wizardData.program_name.trim() !== '');
+            if (wrap) wrap.style.display = canShow ? 'block' : 'none';
+            //phone.disabled = !canShow;
+            next = next.nextElementSibling;
             continue;
         }
 
-        // ⭐ ŠPECIÁLNE: Telefón účastníka (input_19) - VŽDY zobraz ak je AKÝKOĽVEK program vybraný
-        const phoneField = nextElement.querySelector('input[name="input_19"]');
-        if (phoneField) {
-            const phoneWrapper = phoneField.closest('.gfield');
-            if (phoneWrapper) {
-                const isProgramSelected = !!(window.wizardData.program_name && window.wizardData.program_name.trim() !== '');
-                
-                if (isProgramSelected) {
-                    phoneWrapper.style.display = '';
-                    phoneWrapper.style.visibility = 'visible';
-                    phoneWrapper.style.opacity = '1';
-                    phoneField.disabled = false;
-                    console.log('[SPA toggleSection] Phone field: FORCED VISIBLE (program selected globally)');
-                } else {
-                    phoneWrapper.style.display = 'none';
-                    phoneField.disabled = true;
-                    console.log('[SPA toggleSection] Phone field: HIDDEN (no program)');
-                }
-            }
-            nextElement = nextElement.nextElementSibling;
-            continue;
-        }
-        
-        // ⭐ ŠPECIÁLNE: Email CHILD (input_15) - zobraz LEN ak show=true A je CHILD program
-        const childEmailField = nextElement.querySelector('input[name="input_15"]');
-        if (childEmailField) {
-            const childEmailWrapper = childEmailField.closest('.gfield');
-            const isChildProgram = window.spaCurrentProgramType === 'child';
-            
-            if (childEmailWrapper) {
-                if (show && isChildProgram) {
-                    childEmailWrapper.style.display = '';
-                    childEmailWrapper.style.visibility = 'visible';
-                    childEmailWrapper.style.opacity = '1';
-                    childEmailField.disabled = false;
-                    console.log('[SPA toggleSection] Email CHILD: VISIBLE');
-                } else {
-                    childEmailWrapper.style.display = 'none';
-                    childEmailField.disabled = true;
-                    childEmailField.value = '';
-                    console.log('[SPA toggleSection] Email CHILD: HIDDEN');
-                }
-            }
-            nextElement = nextElement.nextElementSibling;
-            continue;
-        }
-        
-        // ⭐ ŠPECIÁLNE: Email ADULT (input_16) - zobraz LEN ak show=true A je ADULT program
-        const adultEmailField = nextElement.querySelector('input[name="input_16"]');
-        if (adultEmailField) {
-            const adultEmailWrapper = adultEmailField.closest('.gfield');
-            const isChildProgram = window.spaCurrentProgramType === 'child';
-            
-            if (adultEmailWrapper) {
-                if (show && !isChildProgram) {
-                    adultEmailWrapper.style.display = '';
-                    adultEmailWrapper.style.visibility = 'visible';
-                    adultEmailWrapper.style.opacity = '1';
-                    adultEmailField.disabled = false;
-                    console.log('[SPA toggleSection] Email ADULT: VISIBLE');
-                } else {
-                    adultEmailWrapper.style.display = 'none';
-                    adultEmailField.disabled = true;
-                    adultEmailField.value = '';
-                    console.log('[SPA toggleSection] Email ADULT: HIDDEN');
-                }
-            }
-            nextElement = nextElement.nextElementSibling;
+        // Email CHILD (input_15) – podľa PROGRAM TYPE
+        const programType = window.spaCurrentProgramType;
+
+        const emailChild = next.querySelector('input[name="input_15"]');
+        if (emailChild) {
+            const wrap = emailChild.closest('.gfield');
+            const visible = show && programType === 'child';
+            if (wrap) wrap.style.display = visible ? 'block' : 'none';
+            //emailChild.disabled = !visible;
+            if (!visible) emailChild.value = '';
+            next = next.nextElementSibling;
             continue;
         }
 
-        // ⭐ ŠPECIÁLNE: Rodné číslo (input_8) sa zobrazuje LEN pre CHILD
-        const birthNumberField = nextElement.querySelector('input[name="input_8"]');
-        if (birthNumberField) {
-            const birthNumberWrapper = birthNumberField.closest('.gfield');
-            const isChildProgram = birthNumberField.getAttribute('data-is-child') === 'true';
-            
-            if (birthNumberWrapper) {
-                if (show && isChildProgram) {
-                    birthNumberWrapper.style.display = 'block';
-                    birthNumberField.disabled = false;
-                    console.log('[SPA toggleSection] Birth number: VISIBLE (CHILD program)');
-                } else {
-                    birthNumberWrapper.style.display = 'none';
-                    birthNumberField.disabled = true;
-                    birthNumberField.value = '';
-                    console.log('[SPA toggleSection] Birth number: HIDDEN (ADULT program)');
-                }
-            }
-            
-            nextElement = nextElement.nextElementSibling;
+        // Email ADULT (input_16) – podľa PROGRAM TYPE
+        const emailAdult = next.querySelector('input[name="input_16"]');
+        if (emailAdult) {
+            const wrap = emailAdult.closest('.gfield');
+            const visible = show && programType === 'adult';
+            if (wrap) wrap.style.display = visible ? 'block' : 'none';
+            //emailAdult.disabled = !visible;
+            if (!visible) emailAdult.value = '';
+            next = next.nextElementSibling;
             continue;
         }
 
-        if (!show) {
-            console.log('[DEBUG toggleSection] Setting display:none on element:', {
-                class: nextElement.className,
-                id: nextElement.id || 'no-id',
-                hasSummary: !!nextElement.querySelector('.spa-price-summary')
-            });
+        // Rodné číslo (input_8) – len CHILD program
+        const birth = next.querySelector('input[name="input_8"]');
+        if (birth) {
+            const wrap = birth.closest('.gfield');
+            const visible = show && programType === 'child';
+            if (wrap) wrap.style.display = visible ? 'block' : 'none';
+            //birth.disabled = !visible;
+            if (!visible) birth.value = '';
+            next = next.nextElementSibling;
+            continue;
         }
 
-        if (sectionElement.classList.contains('spa-section-common') && show) {
-            nextElement.style.display = 'block';
-        } else {
-            nextElement.style.display = show ? 'block' : 'none';
-        }
-        
-        if (show) {
-            const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
-            inputs.forEach(input => {
-                input.disabled = false;
-                input.style.opacity = '1';
-                input.style.pointerEvents = 'auto';
-            });
-        } else {
-            const inputs = nextElement.querySelectorAll('input:not([name="input_8"]), select, textarea');
-            inputs.forEach(input => {
-                input.disabled = true;
-            });
-        }
-        
-        nextElement = nextElement.nextElementSibling;
+        // Default show/hide
+        next.style.display = show ? 'block' : 'none';
+        /* next.querySelectorAll('input, select, textarea').forEach(i => {
+            i.disabled = !show;
+        }); */
+
+        next = next.nextElementSibling;
     }
-    
-    console.log('[SPA toggleSection]', show ? 'ENABLED' : 'DISABLED', 'fields in section');
+
+    console.log('[SPA toggleSection]', show ? 'SHOW' : 'HIDE', sectionElement.className);
 };

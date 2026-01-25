@@ -465,6 +465,34 @@ window.spaErrorState = {
             
             if (data.success) {
                 window.renderInfobox(data.data, data.data.icons, data.data.capacity_free, data.data.price);
+                
+                // ⭐ KRITICKÁ OPRAVA: Po renderi infoboxu VŽDY skontroluj health field a pagebreak
+                // Toto zachytáva CASE 0 (keď updateSectionVisibility() sa nevolá)
+                setTimeout(() => {
+                    const programSelectedNow = !!(
+                        window.wizardData.city_name && 
+                        window.wizardData.city_name.trim() !== '' &&
+                        window.wizardData.program_name && 
+                        window.wizardData.program_name.trim() !== ''
+                    );
+                    
+                    // Health field kontrola
+                    const healthTextareaCallback = document.querySelector('textarea[name="input_9"]');
+                    if (healthTextareaCallback) {
+                        const healthFieldCallback = healthTextareaCallback.closest('.gfield');
+                        if (healthFieldCallback) {
+                            healthFieldCallback.style.display = programSelectedNow ? 'block' : 'none';
+                            console.log('[SPA HEALTH FLOW] POST-RENDER:', programSelectedNow ? '✅ VISIBLE' : '❌ HIDDEN', 'health field');
+                        }
+                    }
+                    
+                    // Pagebreak kontrola
+                    const pagebreakCallback = document.querySelector('.gform_page_footer');
+                    if (pagebreakCallback) {
+                        pagebreakCallback.style.display = programSelectedNow ? '' : 'none';
+                        console.log('[SPA HEALTH FLOW] POST-RENDER:', programSelectedNow ? '✅ VISIBLE' : '❌ HIDDEN', 'pagebreak');
+                    }
+                }, 100);
             } else {
                 console.error('[SPA Infobox] Chyba:', data.data?.message);
                 window.hideLoader();

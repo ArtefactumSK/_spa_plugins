@@ -50,11 +50,15 @@ function spa_enqueue_infobox_scripts() {
     $fields_config = include(plugin_dir_path(__FILE__) . 'spa-config/fields.php');
 
     // Posli do JS
-    wp_localize_script('spa-infobox-js', 'spaConfig', [
+    /* wp_localize_script('spa-infobox-js', 'spaConfig', [
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'fields' => [
             'spa_city' => 'input_1',
             'spa_program' => 'input_2'
         ]
+    ]); */
+    wp_localize_script('spa-infobox-js', 'spaConfig', [
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'fields'  => $fields_config,
     ]);
 }
