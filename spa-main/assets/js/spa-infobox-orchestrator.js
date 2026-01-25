@@ -37,13 +37,6 @@ window.hideAllSectionsOnInit = function() {
         console.log('[SPA Init] Hidden: Adult email field (input_16)');
     }
     
-    // ⭐ SKRY spa-field-health pri INIT
-    const healthField = document.querySelector('.spa-field-health');
-    if (healthField) {
-        healthField.style.display = 'none';
-        console.log('[SPA Init] Hidden: spa-field-health');
-    }
-    
     // Skry všetky sekcie podľa CSS tried
     const sections = [
         'spa-section-common',
@@ -62,6 +55,32 @@ window.hideAllSectionsOnInit = function() {
             console.log(`[SPA Init] ❌ Hidden: ${cssClass} (ID: ${section.id || 'no-id'})`);
         });
     });
+    
+    // ⭐ CASE 0 DEFAULT: Skry pole Zdravotné obmedzenia
+    // Používame selektor textarea[name="input_9"] namiesto field_3_9 ID
+    // Toto pole NIE JE v .gfield--type-section, preto ho toggleSection() neriadi
+    // Musí sa skryť manuálne a zobraziť až v updateSectionVisibility() keď programSelected = true
+    const healthTextarea = document.querySelector('textarea[name="input_9"]');
+    if (healthTextarea) {
+        const healthField = healthTextarea.closest('.gfield');
+        if (healthField) {
+            healthField.style.display = 'none';
+            console.log('[SPA HEALTH FLOW] ❌ Hidden: health field (textarea input_9) - CASE 0 init');
+        }
+    } else {
+        console.warn('[SPA HEALTH FLOW] ⚠️ textarea[name="input_9"] NOT FOUND in DOM');
+    }
+    
+    // ⭐ CASE 0 DEFAULT: Skry pagebreak tlačidlo
+    // Pagebreak má logiku v updateSectionVisibility(), ale tá sa v CASE 0 NEVOLÁ
+    // Preto musí byť DEFAULT HIDDEN a zobraziť sa až keď programSelected = true
+    const pagebreak = document.querySelector('.gform_page_footer');
+    if (pagebreak) {
+        pagebreak.style.display = 'none';
+        console.log('[SPA HEALTH FLOW] ❌ Hidden: pagebreak (.gform_page_footer) - CASE 0 init');
+    } else {
+        console.warn('[SPA HEALTH FLOW] ⚠️ .gform_page_footer NOT FOUND in DOM');
+    }
     
     // ⭐ Označ že sekcie boli skryté
     window.spa_sections_hidden = true;
@@ -99,6 +118,18 @@ window.updateSectionVisibility = function() {
         programSelected,
         allSelected
     });
+
+    // ⭐ KONTROLA: Zobraz/skry pole Zdravotné obmedzenia (textarea input_9)
+    // Toto pole NIE JE v sekčnej štruktúre, preto ho musíme ovládať manuálne
+    // CASE 0/1: SKRYTÉ, CASE 2 (programSelected): VIDITEĽNÉ
+    const healthTextarea = document.querySelector('textarea[name="input_9"]');
+    if (healthTextarea) {
+        const healthField = healthTextarea.closest('.gfield');
+        if (healthField) {
+            healthField.style.display = programSelected ? 'block' : 'none';
+            console.log('[SPA HEALTH FLOW]', programSelected ? '✅ VISIBLE' : '❌ HIDDEN', 'health field (textarea input_9) - programSelected:', programSelected);
+        }
+    }
 
     // ⭐ ZÍSKAJ age_min priamo z programu (nie z data atribútu)
     let isChildProgram = false;
@@ -222,7 +253,6 @@ window.updateSectionVisibility = function() {
     const commonSections = document.querySelectorAll('.spa-section-common');
     const adultSections = document.querySelectorAll('.spa-section-adult');
     const childSections = document.querySelectorAll('.spa-section-child');
-    const registrationSummary = document.querySelector('.spa-price-summary');
 
     console.log('[SPA Section Control] Sections found:', {
         common: commonSections.length,
@@ -231,32 +261,8 @@ window.updateSectionVisibility = function() {
     });
 
 
-    // ⭐ GUARD: Skontroluj canShowSections
-    const canShowSections = window.spaFormState.city === true && window.spaFormState.program === true;
-    
-    console.log('[SPA Section Control] canShowSections:', canShowSections, {
-        cityState: window.spaFormState.city,
-        programState: window.spaFormState.program
-    });
-    
-    // ⭐ RIADENIE spa-field-health
-    const healthField = document.querySelector('.spa-field-health');
-    if (healthField) {
-        if (canShowSections) {
-            healthField.style.display = 'block';
-            const healthInput = healthField.querySelector('input, textarea');
-            if (healthInput) {
-                healthInput.disabled = false;
-            }
-            console.log('[SPA Section Control] ✅ Health field: VISIBLE');
-        } else {
-            healthField.style.display = 'none';
-            console.log('[SPA Section Control] ❌ Health field: HIDDEN (canShowSections=false)');
-        }
-    }
-    
     // LOGIKA ZOBRAZOVANIA: stačí programSelected (mesto + program)
-    if (programSelected && canShowSections) {
+    if (programSelected) {
         // 1. SPOLOČNÁ SEKCIA: vždy zobrazená (VŠETKY commonSections)
         commonSections.forEach(section => {
             window.toggleSection(section, true);
@@ -277,26 +283,21 @@ window.updateSectionVisibility = function() {
         }
     } else {
         // Skry VŠETKY sekcie
-        const healthFieldFallback = document.querySelector('.spa-field-health');
-        if (healthFieldFallback) {
-            healthFieldFallback.style.display = 'none';
-        }
         commonSections.forEach(section => window.toggleSection(section, false));
         adultSections.forEach(section => window.toggleSection(section, false));
         childSections.forEach(section => window.toggleSection(section, false));
         console.log('[SPA Section Control] ❌ All sections: HIDDEN (no program selected)');
     }
-
-    // ⭐ Oprava: Vždy zobraz summary wrapper po togglingu sekcií (ak program vybraný)
-    const summaryElement = document.querySelector('.spa-price-summary');
-    if (summaryElement && programSelected) {
-        const summaryWrapper = summaryElement.closest('.gfield');
-        if (summaryWrapper) {
-            summaryWrapper.style.display = '';
-            console.log('[SPA Section Control] Forced summary wrapper visible (programSelected=true)');
-        }
-    }
     
+    // ⭐ KONTROLA: Zobraz/skry pagebreak (.gform_page_footer)
+    // Pagebreak sa zobrazuje LEN v CASE 2 (programSelected = true)
+    // V CASE 0/1 musí byť SKRYTÝ
+    const pagebreak = document.querySelector('.gform_page_footer');
+    if (pagebreak) {
+        pagebreak.style.display = programSelected ? '' : 'none';
+        console.log('[SPA HEALTH FLOW]', programSelected ? '✅ VISIBLE' : '❌ HIDDEN', 'pagebreak - programSelected:', programSelected);
+    }
+
     console.log('[SPA Section Control] ========== UPDATE END ==========');
 };
 
