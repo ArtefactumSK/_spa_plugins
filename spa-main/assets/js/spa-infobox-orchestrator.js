@@ -20,16 +20,16 @@ window.spaFieldScopes = {
         spaConfig.fields.spa_parent_email,
         spaConfig.fields.spa_parent_phone,
         spaConfig.fields.spa_client_email,
-        spaConfig.fields.spa_consent_guardian
+        spaConfig.fields.spa_consent_guardian,
+        spaConfig.fields.spa_member_birthnumber
     ],
     adult_only: [
-        spaConfig.fields.spa_client_email_required,
-        spaConfig.fields.spa_member_birthnumber
+        spaConfig.fields.spa_client_email_required
     ]
 };
 
 /**
- * Vráti scope poľa: 'child' | 'adult' | 'always'
+ * Vráti scope podľa: 'child' | 'adult' | 'always'
  */
 window.getSpaFieldScope = function (fieldName) {
     if (window.spaFieldScopes.child_only.includes(fieldName)) return 'child';
@@ -65,6 +65,24 @@ window.hideAllSectionsOnInit = function () {
     // Skry common/child/adult sekcie
     document.querySelectorAll('.spa-section-common, .spa-section-child, .spa-section-adult').forEach(sec => {
         sec.style.display = 'none';
+    });
+
+    // Skry radio spa_registration_type
+    const regTypeWrapper = document.querySelector(`[name="${spaConfig.fields.spa_registration_type}"]`)?.closest('.gfield');
+    if (regTypeWrapper) {
+        regTypeWrapper.style.display = 'none';
+    }
+
+    // Skry všetky child_only a adult_only polia
+    Object.entries(spaConfig.fields).forEach(([key, fieldName]) => {
+        const scope = getSpaFieldScope(fieldName);
+        if (scope !== 'always') {
+            const el = document.querySelector(`[name="${fieldName}"]`);
+            if (el) {
+                const wrap = el.closest('.gfield');
+                if (wrap) wrap.style.display = 'none';
+            }
+        }
     });
 
     console.log('[SPA Init] Sections hidden');
@@ -121,25 +139,30 @@ window.updateSectionVisibility = function () {
     const resolvedTypeField = document.querySelector(`input[name="${spaConfig.fields.spa_resolved_type}"]`);
     if (resolvedTypeField) resolvedTypeField.value = participantType || '';
 
-    // input_4 visibility + auto-select podľa PROGRAM TYPE (ale cez fields.json)
+    // =========================================================
+    // KROK 1: spa_registration_type – zobrazuje sa LEN ak je PROGRAM vybraný
+    // =========================================================
     const registrationTypeWrapper = document.querySelector(`[name="${spaConfig.fields.spa_registration_type}"]`)?.closest('.gfield');
     if (registrationTypeWrapper) {
-        registrationTypeWrapper.style.display = canShowProgramFlow ? '' : 'none';
+        if (canShowProgramFlow) {
+            registrationTypeWrapper.style.display = '';
 
-        const radios = document.querySelectorAll(`input[name="${spaConfig.fields.spa_registration_type}"]`);
-        if (canShowProgramFlow && programType) {
+            const radios = document.querySelectorAll(`input[name="${spaConfig.fields.spa_registration_type}"]`);
             radios.forEach(radio => {
                 const isChild = radio.value.toLowerCase().includes('dieťa') || radio.value.toLowerCase().includes('dieť');
 
                 if (programType === 'child') {
                     radio.checked = isChild;
-                    radio.disabled = true;
+                    radio.disabled = !isChild;
                 } else {
                     radio.checked = !isChild;
-                    radio.disabled = true;
+                    radio.disabled = isChild;
                 }
             });
         } else {
+            registrationTypeWrapper.style.display = 'none';
+            
+            const radios = document.querySelectorAll(`input[name="${spaConfig.fields.spa_registration_type}"]`);
             radios.forEach(radio => {
                 radio.checked = false;
                 radio.disabled = false;
@@ -147,7 +170,9 @@ window.updateSectionVisibility = function () {
         }
     }
 
-    // SEKČIE (ponechávame existujúci systém)
+    // =========================================================
+    // KROK 2: SEKCIE – zobrazujú sa LEN ak je PROGRAM vybraný
+    // =========================================================
     document.querySelectorAll('.spa-section-common').forEach(sec => {
         sec.style.display = canShowProgramFlow ? '' : 'none';
     });
@@ -161,7 +186,7 @@ window.updateSectionVisibility = function () {
     });
 
     // =========================================================
-    // FIELD SCOPE ENFORCEMENT (JEDINÉ RIADENIE POLÍ adult/child)
+    // KROK 3: FIELD SCOPE ENFORCEMENT – polia sa zobrazujú LEN ak je PROGRAM vybraný
     // =========================================================
     if (canShowProgramFlow && programType) {
         Object.entries(spaConfig.fields).forEach(([key, fieldName]) => {
