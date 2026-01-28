@@ -466,9 +466,13 @@ window.spaErrorState = {
             if (data.success) {
                 window.renderInfobox(data.data, data.data.icons, data.data.capacity_free, data.data.price);
                 
-                // ⭐ KRITICKÁ OPRAVA: Po renderi infoboxu VŽDY skontroluj health field a pagebreak
-                // Toto zachytáva CASE 0 (keď updateSectionVisibility() sa nevolá)
+                // Viditeľnosť UI riadi orchestrátor
                 setTimeout(() => {
+                    if (window.spaVisibilityControlled) {
+                        console.log('[SPA HEALTH FLOW] POST-RENDER: Skipped - controlled by orchestrator');
+                        return;
+                    }
+                    
                     const programSelectedNow = !!(
                         window.wizardData.city_name && 
                         window.wizardData.city_name.trim() !== '' &&

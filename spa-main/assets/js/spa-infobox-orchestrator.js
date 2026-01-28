@@ -224,6 +224,9 @@ window.spaInitSectionOrchestrator = function () {
         return;
     }
 
+    // ⭐ AKTIVUJ CENTRÁLNE RIADENIE VIDITEĽNOSTI
+    window.spaVisibilityControlled = true;
+
     if (typeof window.hideAllSectionsOnInit === 'function') window.hideAllSectionsOnInit();
     if (typeof window.updateSectionVisibility === 'function') window.updateSectionVisibility();
 

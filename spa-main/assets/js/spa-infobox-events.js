@@ -73,7 +73,7 @@ if (typeof jQuery !== 'undefined') {
     jQuery(document).on('gform_post_render', function() {
         window.initInfobox();
         window.watchFormChanges();
-        window.hideAllSectionsOnInit();
+        // window.hideAllSectionsOnInit() - riadené orchestrátorom
         window.applyGetParams(); 
     });
 }
