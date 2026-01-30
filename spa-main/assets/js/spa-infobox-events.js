@@ -6,7 +6,7 @@
      * Filtrovanie programových options podľa mesta
      */
 window.filterProgramsByCity = function(cityName) {
-    const programField = document.querySelector('[name="spa_program"]');
+    const programField = document.querySelector(`[name="${spaConfig.fields.spa_program}"]`);
     
     if (!programField) {
         console.warn('[SPA Filter] Program field not found');
@@ -83,7 +83,7 @@ if (typeof jQuery !== 'undefined') {
  * Renderovanie frekvenčného selektora
  */
 window.renderFrequencySelector = function(programData) {
-    const selector = document.querySelector('.spa-frequency-selector');
+    const selector = document.querySelector(`[name="${spaConfig.fields.spa_frequency}"]`);
     
     if (!selector) {
         console.warn('[SPA Frequency] Selector .spa-frequency-selector nebol nájdený');

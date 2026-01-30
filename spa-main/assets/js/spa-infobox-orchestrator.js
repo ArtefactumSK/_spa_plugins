@@ -73,6 +73,47 @@ window.hideAllSectionsOnInit = function() {
     window.spa_sections_hidden = true;
     console.log('[SPA Init] ========== INIT COMPLETE ==========');
 };
+/**
+ * Skrytie všetkých sekcií + polí pri INIT
+ */
+window.hideAllSectionsOnInit = function() {
+    console.log('[SPA Init] ========== INIT RESET ==========');
+
+    // ⭐ GUARD: spaConfig.fields MUSÍ existovať
+    if (!window.spaConfig || !spaConfig.fields) {
+        console.warn('[SPA Init] spaConfig.fields not ready – skipping');
+        return;
+    }
+
+    if (window.spa_sections_hidden) {
+        console.log('[SPA Init] Already initialized, skipping');
+        return;
+    }
+
+    // 1. Skry sekcie
+    document.querySelectorAll('.spa-section-common, .spa-section-child, .spa-section-adult').forEach(sec => {
+        sec.style.display = 'none';
+    });
+
+    // 2. Skry spa_registration_type
+    const regTypeField = document.querySelector(`input[name="${spaConfig.fields.spa_registration_type}"]`);
+    if (regTypeField) {
+        const wrap = regTypeField.closest('.gfield');
+        if (wrap) wrap.style.display = 'none';
+    }
+
+    // 3. Skry child_only + adult_only polia
+    [...window.spaFieldScopes.child_only, ...window.spaFieldScopes.adult_only].forEach(fieldName => {
+        const el = document.querySelector(`[name="${fieldName}"]`);
+        if (el) {
+            const wrap = el.closest('.gfield');
+            if (wrap) wrap.style.display = 'none';
+        }
+    });
+
+    window.spa_sections_hidden = true;
+    console.log('[SPA Init] ========== INIT COMPLETE ==========');
+};
 
 /**
  * Nastav wrapper viditeľnosť
