@@ -51,7 +51,7 @@ window.getSpaFieldScope = function(fieldName) {
 /**
  * RIADENIE VIDITEĽNOSTI SEKCIÍ + POLÍ
  */
-/* window.updateSectionVisibility = function() {
+window.updateSectionVisibility = function() {
     console.log('[SPA Section Control] ========== UPDATE START ==========');
 
     // ⭐ GUARD: spaConfig.fields MUSÍ existovať
@@ -165,7 +165,7 @@ window.getSpaFieldScope = function(fieldName) {
     }
 
     console.log('[SPA Section Control] ========== UPDATE END ==========');
-}; */
+};
 /**
  * Skrytie všetkých sekcií + polí pri INIT
  */

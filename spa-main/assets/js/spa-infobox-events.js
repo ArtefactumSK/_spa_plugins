@@ -82,10 +82,11 @@ if (typeof jQuery !== 'undefined') {
 /**
  * Renderovanie frekvenčného selektora
  * AUTORITATÍVNY SELEKTOR: .gfield.spa-frequency-selector (z GF JSON cssClass)
- * DÔVOD: data-admin-label nie je dostupný pre radio button fields v GF
+ * POZNÁMKA: Wrapper je <fieldset>, nie <div>
  */
 window.renderFrequencySelector = function(programData) {
-    // Find GF wrapper by CSS class defined in GF JSON
+    console.log('[SPA Frequency] renderFrequencySelector called with:', !!programData);
+    
     const gfieldWrapper = document.querySelector('.gfield.spa-frequency-selector');
     
     if (!gfieldWrapper) {
@@ -93,20 +94,14 @@ window.renderFrequencySelector = function(programData) {
         return;
     }
     
-    // Find GF input container (where radio buttons live)
-    const inputContainer = gfieldWrapper.querySelector('.ginput_container');
-    
-    if (!inputContainer) {
-        console.error('[SPA Frequency] .ginput_container not found inside GF wrapper');
-        return;
-    }
     if (!programData) {
-        inputContainer.innerHTML = '';
+        gfieldWrapper.innerHTML = '';
         window.spaFormState.frequency = false;
+        console.log('[SPA Frequency] Cleared (no program data)');
         return;
     }
 
-    inputContainer.innerHTML = '';
+    gfieldWrapper.innerHTML = '';
     
     const frequencies = [
         { key: 'spa_price_1x_weekly', label: '1× týždenne' },
@@ -145,47 +140,65 @@ window.renderFrequencySelector = function(programData) {
         });
     });
     
+    // ────────────────────────────────────────────────
+    // VŽDY najprv vyčistíme checked stav (dôležité!)
+    // ────────────────────────────────────────────────
+    window.spaFormState.frequency = false;
+
     if (activeFrequencies.length === 0) {
         const disabledOption = document.createElement('label');
-        disabledOption.className = 'gchoice gchoice_disabled';
+        disabledOption.className = 'spa-frequency-option spa-frequency-disabled';
         disabledOption.innerHTML = `
             <input type="radio" disabled>
             <span>Pre tento program nie je dostupná platná frekvencia</span>
         `;
-        inputContainer.appendChild(disabledOption);
+        gfieldWrapper.appendChild(disabledOption);
+        console.log('[SPA Frequency] No valid frequencies available');
         return;
     }
     
-    // Get actual input name from existing radio buttons (or construct from field ID)
-    const existingRadio = gfieldWrapper.querySelector('input[type="radio"]');
-    const radioName = existingRadio ? existingRadio.name : 'input_31';
-    
+    // Vytvoríme všetky možnosti – žiadna nie je defaultne checked
     activeFrequencies.forEach((freq, index) => {
         const label = document.createElement('label');
-        label.className = 'gchoice';
+        label.className = 'spa-frequency-option';
+        label.style.cursor = 'pointer';           // vizuálna nápoveda
+        label.style.userSelect = 'none';          // zabráni označovaniu textu pri kliku
         
         const input = document.createElement('input');
         input.type = 'radio';
-        input.name = radioName;  // Use actual GF field name
+        // CRITICAL: Radio buttons MUST have a name to function as a group
+        // Fallback to wrapper's field ID if spaConfig mapping unavailable
+        const radioName = spaConfig.fields?.spa_frequency || 
+                        gfieldWrapper.id.replace('field_', 'input_');
+        input.name = radioName;
         input.value = freq.key;
-        input.id = `choice_${radioName}_${index}`;
-        
-        if (activeFrequencies.length === 1) {
-            input.checked = true;
-            window.spaFormState.frequency = true;
-            
-            setTimeout(() => {
-                window.updateSectionVisibility();
-            }, 150);
+        input.disabled = false;
+
+        // DEBUG: Verify name is set
+        if (!input.name) {
+            console.error('[SPA Frequency] CRITICAL: Radio button has no name attribute!');
         }
+        // input.checked = false; → defaultne už je false
         
+        // Klik na label → označí radio + spustí change event
+        label.addEventListener('click', function(e) {
+            // Ak klikol priamo na input, necháme prehliadač spracovať sám
+            if (e.target === input) return;
+            
+            e.preventDefault(); // zabráni duplicitnému spusteniu
+            input.checked = true;
+            
+            // Simulujeme change event – Gravity Forms / náš kód na to reaguje
+            const changeEvent = new Event('change', { bubbles: true });
+            input.dispatchEvent(changeEvent);
+        });
+
+        // Náš pôvodný change listener – ostáva nedotknutý
         input.addEventListener('change', function() {
             if (this.checked) {
                 window.spaFormState.frequency = true;
                 window.updateSectionVisibility();
-                if (typeof window.updatePriceSummary === 'function') {
-                    window.updatePriceSummary();
-                }
+                window.updatePriceSummary();
                 console.log('[SPA Frequency] Selected:', this.value);
             }
         });
@@ -195,17 +208,30 @@ window.renderFrequencySelector = function(programData) {
         
         label.appendChild(input);
         label.appendChild(span);
-        inputContainer.appendChild(label);
+        gfieldWrapper.appendChild(label);
     });
     
+    // Auto-check iba ak je PRESNE JEDNA možnosť
     if (activeFrequencies.length === 1) {
-        window.spaFormState.frequency = true;
-        setTimeout(() => {
-            window.updateSectionVisibility();
-            if (typeof window.updatePriceSummary === 'function') {
-                window.updatePriceSummary();
-            }
-        }, 150);
+        const singleInput = gfieldWrapper.querySelector('input[type="radio"]');
+        if (singleInput) {
+            singleInput.checked = true;
+            window.spaFormState.frequency = true;
+            
+            // Spustíme change event aj pri auto-check (dôležité pre konzistenciu)
+            const changeEvent = new Event('change', { bubbles: true });
+            singleInput.dispatchEvent(changeEvent);
+            
+            // + istota aktualizácie sekcií a prehľadu
+            setTimeout(() => {
+                if (typeof window.updateSectionVisibility === 'function') {
+                    window.updateSectionVisibility();
+                }
+                if (typeof window.updatePriceSummary === 'function') {
+                    window.updatePriceSummary();
+                }
+            }, 120);
+        }
     }
     
     console.log('[SPA Frequency] Rendered:', activeFrequencies.length, 'options');

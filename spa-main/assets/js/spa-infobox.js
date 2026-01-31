@@ -190,7 +190,7 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
         let programHtml = programMainHtml + programIconHtml;
         // Ulož ikonu do premennej pre neskoršie použitie
         window.savedProgramIconHtml = programIconHtml;
-        // ⭐ Len pre-označenie radio buttonu podľa veku (BEZ zobrazenia sekcií!)
+        // ⭐ AUTORITATÍVNE nastavenie adult/child radio v CASE 2
         setTimeout(() => {
             const isChild = programData.age_min && programData.age_min < 18;
             
@@ -200,18 +200,16 @@ window.renderInfobox = function(data, icons, capacityFree, price) {
                 isChild: isChild
             });
             
-            // ⭐ RODNÉ ČÍSLO - ulož info o type programu
+            // ⭐ RODNÉ ČÍSLO - uloží info o type programu
             const birthNumberField = document.querySelector('input[name="spa_member_birthnumber"]');
             const birthNumberWrapper = birthNumberField ? birthNumberField.closest('.gfield') : null;
-        
+
             if (birthNumberField && birthNumberWrapper) {
                 // Vždy SKRY pri prvotnom výbere programu
                 birthNumberWrapper.style.display = 'none';
                 birthNumberField.setAttribute('data-is-child', isChild ? 'true' : 'false');
                 console.log('[SPA] Saved program type:', isChild ? 'CHILD' : 'ADULT');
             }
-            
-            // ⭐ NEOZNAČUJ RADIO BUTTONY – to sa spraví až v updateSectionVisibility()
         }, 100);
         
         programDiv.innerHTML = programHtml;

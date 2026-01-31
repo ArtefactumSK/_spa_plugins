@@ -37,12 +37,13 @@ require_once SPA_PLUGIN_DIR . 'includes/bootstrap.php';
 add_action('wp_enqueue_scripts', 'spa_enqueue_infobox_scripts');
 
 function spa_enqueue_infobox_scripts() {
+    
     // JavaScript - Orchestrator (must be enqueued first for localize)
     wp_enqueue_script(
         'spa-infobox-orchestrator',
-        SPA_PLUGIN_URL . 'assets/js/spa-infobox-orchestrator.js',
+        plugin_dir_url(__FILE__) . 'assets/js/spa-infobox-orchestrator.js',
         ['jquery'],
-        '1.0.0',
+        '1.0.1',  // ← VERSION BUMP (force refresh)
         true
     );
 
